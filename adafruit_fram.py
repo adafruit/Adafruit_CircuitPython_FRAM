@@ -205,14 +205,13 @@ class FRAM:
         raise NotImplementedError
 
 class FRAM_I2C(FRAM):
-    """
-    I2C class for FRAM_I2C.
+    """ I2C class for FRAM.
 
     ..param: i2c_SCL: The I2C SCL pin. Must be a ``board.PIN`` object.
     ..param: i2c_SDA: The I2C SDA print. Must be a ``board.PIN`` object.
     ..param: int address: I2C address of FRAM. Default address is ``0x50``.
     ..param: bool write_protect: Turns on/off initial write protection.
-                                 Default is `False`.
+                                Default is ``False``.
     ..param: wp_pin: Physical ``WP`` breakout pin. Must be a ``board.PIN``
                      object.
     """
