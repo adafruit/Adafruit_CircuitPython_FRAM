@@ -50,7 +50,7 @@ __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_FRAM.git"
 
 _MAX_SIZE_I2C = const(262143) # 32768 words x 8 bits
-_MAX_SIZE_SPI = const(512000)
+_MAX_SIZE_SPI = const(65535) # 8192 words x 8 bits
 
 class FRAM:
     """
