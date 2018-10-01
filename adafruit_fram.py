@@ -106,10 +106,10 @@ class FRAM:
     def write_protect_pin(self, wp_pin, write_protect=False):
         """ Assigns the write protection (``WP``) pin.
 
-        .. param: wp_pin: The ``board.PIN`` object connected to the ``WP`` pin
+        :param: wp_pin: The ``board.PIN`` object connected to the ``WP`` pin
                           on the breakout board/chip. To remove a previously
                           set ``WP`` pin, set this value to ``None``.
-        .. param: bool write_protect: Turn on/off write protection immediately
+        :param: bool write_protect: Turn on/off write protection immediately
                                  when setting the pin. Default is ``False``
 
         """
@@ -128,9 +128,9 @@ class FRAM:
     def read(self, register, length=1):
         """ Reads the data stored on the FRAM.
 
-        .. param: int register: Register location to start reading. Range is:
-                                ``1`` to ``max_size``.
-        .. param: int length: Length of registers to read from starting register.
+        :param: int register: Register location to start reading. Range is:
+                                ``0`` to ``max_size``.
+        :param: int length: Length of registers to read from starting register.
                               This function will create a buffer the size of
                               ``length``; larger buffers can cause memory
                               allocation problems on some platforms.
@@ -154,8 +154,8 @@ class FRAM:
     def write_single(self, register, data):
         """ Writes a single byte to the FRAM.
 
-        .. param: int register: Register location to write the byte data.
-        .. param: int data: The data to write.
+        :param: int register: Register location to write the byte data.
+        :param: int data: The data to write.
         """
         if not isinstance(data, int):
             raise ValueError("Data must be an integer.")
@@ -170,14 +170,14 @@ class FRAM:
     def write_sequence(self, start_register, data, wraparound=False):
         """ Writes sequential data to the FRAM.
 
-        .. param: int start_register: Register location to start writing the
+        :param: int start_register: Register location to start writing the
                                       data.
-        .. param: data: The data to write. Must be an iterable type of either
-                        ``bytearray``, ``list``, or ``tuple``.
-        .. param: bool wraparound: Controls if sequential writes can wraparound
-                                   beyond the ``max_size`` to zero, when
-                                   ``start_register`` + ``data length`` is
-                                   greater than ``max_size``.
+        :param: data: The data to write. Must be an iterable type of either
+                      ``bytearray``, ``list``, or ``tuple``.
+        :param: bool wraparound: Controls if sequential writes can wraparound
+                                 beyond the ``max_size`` to zero, when
+                                 ``start_register`` + ``data length`` is
+                                 greater than ``max_size``.
         """
         if not isinstance(data, (bytearray, list, tuple)):
             raise ValueError("Data must be either a bytearray, list, or tuple.")
@@ -207,13 +207,13 @@ class FRAM:
 class FRAM_I2C(FRAM):
     """ I2C class for FRAM.
 
-    ..param: i2c_SCL: The I2C SCL pin. Must be a ``board.PIN`` object.
-    ..param: i2c_SDA: The I2C SDA print. Must be a ``board.PIN`` object.
-    ..param: int address: I2C address of FRAM. Default address is ``0x50``.
-    ..param: bool write_protect: Turns on/off initial write protection.
+    :param: i2c_SCL: The I2C SCL pin. Must be a ``board.PIN`` object.
+    :param: i2c_SDA: The I2C SDA print. Must be a ``board.PIN`` object.
+    :param: int address: I2C address of FRAM. Default address is ``0x50``.
+    :param: bool write_protect: Turns on/off initial write protection.
                                 Default is ``False``.
-    ..param: wp_pin: Physical ``WP`` breakout pin. Must be a ``board.PIN``
-                     object.
+    :param: wp_pin: Physical ``WP`` breakout pin. Must be a ``board.PIN``
+                    object.
     """
     #pylint: disable=too-many-arguments
     def __init__(self, i2c_SCL, i2c_SDA, address=0x50, write_protect=False,
