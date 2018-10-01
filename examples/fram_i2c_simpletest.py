@@ -1,7 +1,7 @@
 ## Simple Example For CircuitPython/Python I2C FRAM Library
 
-import adafruit_fram
 import board
+import adafruit_fram
 
 ## Create a FRAM object (default address used).
 
