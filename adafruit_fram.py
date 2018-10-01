@@ -32,8 +32,10 @@ Implementation Notes
 
 **Hardware:**
 
- * `Adafruit I2C Non-Volatile FRAM Breakout <https://www.adafruit.com/product/1895>`
- * `Adafruit SPI Non-Volatile FRAM Breakout <https://www.adafruit.com/product/1897>`
+ * Adafruit `I2C Non-Volatile FRAM Breakout
+   <https://www.adafruit.com/product/1895>`_ (Product ID: 1895)
+ * Adafruit `SPI Non-Volatile FRAM Breakout
+   <https://www.adafruit.com/product/1897>`_ (Product ID: 1897)
 
 **Software and Dependencies:**
 
