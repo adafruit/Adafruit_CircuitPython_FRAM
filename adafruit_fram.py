@@ -109,10 +109,10 @@ class FRAM:
         """ Assigns the write protection (``WP``) pin.
 
         :param: wp_pin: The ``board.PIN`` object connected to the ``WP`` pin
-                          on the breakout board/chip. To remove a previously
-                          set ``WP`` pin, set this value to ``None``.
+                        on the breakout board/chip. To remove a previously
+                        set ``WP`` pin, set this value to ``None``.
         :param: bool write_protect: Turn on/off write protection immediately
-                                 when setting the pin. Default is ``False``
+                                    when setting the pin. Default is ``False``
 
         """
         if not wp_pin is None:
@@ -133,12 +133,12 @@ class FRAM:
         :param: int register: Register location to start reading. Range is:
                                 ``0`` to ``max_size``.
         :param: int length: Length of registers to read from starting register.
-                              This function will create a buffer the size of
-                              ``length``; larger buffers can cause memory
-                              allocation problems on some platforms.
-                              Range is ``1`` (default) to ``max_size``.
-                              However, ``register`` + ``length`` cannot be
-                              greater than ``max_size``.
+                            This function will create a buffer the size of
+                            ``length``; larger buffers can cause memory
+                            allocation problems on some platforms.
+                            Range is ``1`` (default) to ``max_size``.
+                            However, ``register`` + ``length`` cannot be
+                            greater than ``max_size``.
         """
         if length < 1:
             raise ValueError("Length must be '1' or greater.")
@@ -173,7 +173,7 @@ class FRAM:
         """ Writes sequential data to the FRAM.
 
         :param: int start_register: Register location to start writing the
-                                      data.
+                                    data.
         :param: data: The data to write. Must be an iterable type of either
                       ``bytearray``, ``list``, or ``tuple``.
         :param: bool wraparound: Controls if sequential writes can wraparound
