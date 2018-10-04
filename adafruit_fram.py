@@ -51,8 +51,8 @@ from micropython import const
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_FRAM.git"
 
-_MAX_SIZE_I2C = const(262143) # 32768 words x 8 bits
-_MAX_SIZE_SPI = const(65535) # 8192 words x 8 bits
+_MAX_SIZE_I2C = const(32767)
+_MAX_SIZE_SPI = const(8191)
 
 _I2C_MANF_ID = const(0x0A)
 _I2C_PROD_ID = const(0x510)
