@@ -65,9 +65,10 @@ class FRAM:
     def __init__(self, max_size, write_protect=False, wp_pin=None):
         self._max_size = max_size
         self._wp = write_protect
+        self._wraparound = False
         if not wp_pin is None:
-            import digitalio
-            self._wp_pin = digitalio.DigitalInOut(wp_pin)
+            #import digitalio
+            self._wp_pin = wp_pin
             # Make sure write_prot is set to output
             self._wp_pin.switch_to_output()
             self._wp_pin.value = self._wp
@@ -82,6 +83,20 @@ class FRAM:
         return self._max_size
 
     @property
+    def write_wraparound(self):
+        """ Determines if sequential writes will wrapaound the ``FRAM.max_size``
+            address. If ``False``, and a requested write will extend beyond the
+            maximum size, an exception is raised.
+        """
+        return self._wraparound
+
+    @write_wraparound.setter
+    def write_wraparound(self, value):
+        if not value in (True, False):
+            raise ValueError("Write wraparound must be 'True' or 'False'.")
+        self._wraparound = value
+
+    @property
     def write_protected(self):
         """ The status of write protection. Default value on initialization is
             ``False``.
@@ -93,11 +108,7 @@ class FRAM:
             When no ``WP`` pin is supplied, protection is only at the software
             level in this library.
         """
-        if not self._wp_pin is None:
-            status = self._wp_pin.value
-        else:
-            status = self._wp
-        return status
+        return self._wp if self._wp_pin is None else self._wp_pin.value
 
     @write_protected.setter
     def write_protected(self, value):
@@ -105,91 +116,50 @@ class FRAM:
         if not self._wp_pin is None:
             self._wp_pin.value = value
 
-    def write_protect_pin(self, wp_pin, write_protect=False):
-        """ Assigns the write protection (``WP``) pin.
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key > self._max_size:
+                raise ValueError("Register '{0}' greater than maximum FRAM size."
+                                 " ({1})".format(key, self._max_size))
+            return self._read_byte(key)[0]
+        elif isinstance(key, slice):
+            registers = list(range(key.start if not key.start is None else 0,
+                             key.stop if not key.stop is None else None,
+                              key.step if not key.step is None else None))
+            if (registers[0] + len(registers)) > self._max_size:
+                raise ValueError("Register + Length greater than maximum FRAM size."
+                                 " ({0})".format(self._max_size))
 
-        :param: wp_pin: The ``board.PIN`` object connected to the ``WP`` pin
-                        on the breakout board/chip. To remove a previously
-                        set ``WP`` pin, set this value to ``None``.
-        :param: bool write_protect: Turn on/off write protection immediately
-                                    when setting the pin. Default is ``False``
+            read_buffer = bytearray(len(registers))
+            for i, register in enumerate(registers):
+                read_buffer[i] = self._read_byte(register)[0]
+            return read_buffer
 
-        """
-        if not wp_pin is None:
-            import digitalio
-            self._wp_pin = digitalio.DigitalInOut(wp_pin)
-            # Make sure wp_pin is set to switch_to_output
-            self._wp_pin.switch_to_output()
-            self._wp_pin.value = write_protect
-        else:
-            if not self._wp_pin is None:
-                # Deinit the pin to release it
-                self._wp_pin.deinit()
-            self._wp_pin = None
-
-    def read(self, register, length=1):
-        """ Reads the data stored on the FRAM.
-
-        :param: int register: Register location to start reading. Range is:
-                                ``0`` to ``max_size``.
-        :param: int length: Length of registers to read from starting register.
-                            This function will create a buffer the size of
-                            ``length``; larger buffers can cause memory
-                            allocation problems on some platforms.
-                            Range is ``1`` (default) to ``max_size``.
-                            However, ``register`` + ``length`` cannot be
-                            greater than ``max_size``.
-        """
-        if length < 1:
-            raise ValueError("Length must be '1' or greater.")
-        if length > self._max_size:
-            raise ValueError("Length '{0}' greater than maximum FRAM size."
-                             " ({1})".format(length, self._max_size))
-        if (register + length) > self._max_size:
-            raise ValueError("Register + Length greater than maximum FRAM size."
-                             " ({0})".format(self._max_size))
-        read_buffer = bytearray(length)
-        for i in range(length):
-            read_buffer[i] = self._read_byte(register + i)[0]
-        return read_buffer
-
-    def write_single(self, register, data):
-        """ Writes a single byte to the FRAM.
-
-        :param: int register: Register location to write the byte data.
-        :param: int data: The data to write.
-        """
-        if not isinstance(data, int):
-            raise ValueError("Data must be an integer.")
+    def __setitem__(self, key, value):
         if self.write_protected:
             raise RuntimeError("FRAM currently write protected.")
-        if register > self._max_size:
-            raise ValueError("Requested register '{0}' greater than maximum"
-                             " FRAM size. ({1})".format(register,
-                                                        self._max_size))
-        self._write_register(register, data)
 
-    def write_sequence(self, start_register, data, wraparound=False):
-        """ Writes sequential data to the FRAM.
+        if isinstance(key, int):
+            if not isinstance(value, int):
+                raise ValueError("Data must be an integer.")
+            if key.start > self._max_size:
+                raise ValueError("Requested register '{0}' greater than maximum"
+                                 " FRAM size. ({1})".format(key.start,
+                                                            self._max_size))
 
-        :param: int start_register: Register location to start writing the
-                                    data.
-        :param: data: The data to write. Must be an iterable type of either
-                      ``bytearray``, ``list``, or ``tuple``.
-        :param: bool wraparound: Controls if sequential writes can wraparound
-                                 beyond the ``max_size`` to zero, when
-                                 ``start_register`` + ``data length`` is
-                                 greater than ``max_size``.
-        """
-        if not isinstance(data, (bytearray, list, tuple)):
-            raise ValueError("Data must be either a bytearray, list, or tuple.")
-        if self.write_protected:
-            raise RuntimeError("FRAM currently write protected.")
-        if start_register > self._max_size:
-            raise ValueError("Requested register '{0}' greater than maximum"
-                             " FRAM size. ({1})".format(start_register,
-                                                        self._max_size))
-        self._write_page(start_register, data, wraparound)
+            self._write_register(key.start, value)
+
+        elif isinstance(key, slice):
+            if not isinstance(value, (bytearray, list, tuple)):
+                raise ValueError("Data must be either a bytearray, list, or tuple.")
+            if (key.start > self._max_size):
+                raise ValueError("Requested register '{0}' greater than maximum"
+                                 " FRAM size. ({1})".format(key.start,
+                                                            self._max_size))
+            if not key.step is None:
+                raise ValueError("Slice steps are not allowed during write operations.")
+
+            self._write_page(key.start, value, self._wraparound)
 
     def _read_byte(self, register):
         return self._read_register(register)
@@ -209,19 +179,16 @@ class FRAM:
 class FRAM_I2C(FRAM):
     """ I2C class for FRAM.
 
-    :param: i2c_SCL: The I2C SCL pin. Must be a ``board.PIN`` object.
-    :param: i2c_SDA: The I2C SDA print. Must be a ``board.PIN`` object.
+    :param: ~busio.I2C i2c_bus: The I2C bus the FRAM is connected to.
     :param: int address: I2C address of FRAM. Default address is ``0x50``.
     :param: bool write_protect: Turns on/off initial write protection.
                                 Default is ``False``.
-    :param: wp_pin: Physical ``WP`` breakout pin. Must be a ``board.PIN``
-                    object.
+    :param: wp_pin: Physical pin connected to the ``WP`` breakout pin.
+                    Must be a ``digitalio.DigitalInOut`` object.
     """
     #pylint: disable=too-many-arguments
-    def __init__(self, i2c_SCL, i2c_SDA, address=0x50, write_protect=False,
+    def __init__(self, i2c_bus, address=0x50, write_protect=False,
                  wp_pin=None):
-        from busio import I2C as i2c
-        i2c_bus = i2c(i2c_SCL, i2c_SDA)
         i2c_bus.try_lock()
         i2c_bus.writeto((0xF8 >> 1), bytearray([(address << 1)]), stop=False)
         read_buf = bytearray(3)
@@ -266,7 +233,7 @@ class FRAM_I2C(FRAM):
                 pass
             else:
                 raise ValueError("Starting register + data length extends beyond"
-                                 " FRAM maximum size. Use 'wraparound=True' to"
+                                 " FRAM maximum size. Use ``write_wraparound`` to"
                                  " override this warning.")
         with self._i2c as i2c:
             for i in range(0, data_length):
