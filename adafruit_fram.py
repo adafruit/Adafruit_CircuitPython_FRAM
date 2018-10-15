@@ -121,11 +121,11 @@ class FRAM:
             if key > self._max_size:
                 raise ValueError("Register '{0}' greater than maximum FRAM size."
                                  " ({1})".format(key, self._max_size))
-            return self._read_byte(key)[0]
+            return self._read_byte(key)
         elif isinstance(key, slice):
             registers = list(range(key.start if not key.start is None else 0,
-                             key.stop if not key.stop is None else None,
-                              key.step if not key.step is None else None))
+                             key.stop if not key.stop is None else self._max_size,
+                             key.step if not key.step is None else 1))
             if (registers[0] + len(registers)) > self._max_size:
                 raise ValueError("Register + Length greater than maximum FRAM size."
                                  " ({0})".format(self._max_size))
