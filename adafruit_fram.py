@@ -121,11 +121,11 @@ class FRAM:
             if key > self._max_size:
                 raise ValueError("Register '{0}' greater than maximum FRAM size."
                                  " ({1})".format(key, self._max_size))
-            return self._read_byte(key)
+            read_buffer = self._read_byte(key)
         elif isinstance(key, slice):
             registers = list(range(key.start if not key.start is None else 0,
-                             key.stop if not key.stop is None else self._max_size,
-                             key.step if not key.step is None else 1))
+                                   key.stop if not key.stop is None else self._max_size,
+                                   key.step if not key.step is None else 1))
             if (registers[0] + len(registers)) > self._max_size:
                 raise ValueError("Register + Length greater than maximum FRAM size."
                                  " ({0})".format(self._max_size))
@@ -133,7 +133,8 @@ class FRAM:
             read_buffer = bytearray(len(registers))
             for i, register in enumerate(registers):
                 read_buffer[i] = self._read_byte(register)[0]
-            return read_buffer
+
+        return read_buffer
 
     def __setitem__(self, key, value):
         if self.write_protected:
@@ -152,7 +153,7 @@ class FRAM:
         elif isinstance(key, slice):
             if not isinstance(value, (bytearray, list, tuple)):
                 raise ValueError("Data must be either a bytearray, list, or tuple.")
-            if (key.start > self._max_size):
+            if key.start > self._max_size:
                 raise ValueError("Requested register '{0}' greater than maximum"
                                  " FRAM size. ({1})".format(key.start,
                                                             self._max_size))
