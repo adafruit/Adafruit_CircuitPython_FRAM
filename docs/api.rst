@@ -6,3 +6,4 @@
 
 .. automodule:: adafruit_fram
    :members:
+   :special-members: __getitem__, __setitem__

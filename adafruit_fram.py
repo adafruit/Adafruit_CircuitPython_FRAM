@@ -117,6 +117,19 @@ class FRAM:
             self._wp_pin.value = value
 
     def __getitem__(self, key):
+        """ Read the value at the given index, or values in a slice.
+
+            .. code-block:: python
+
+                # read single index
+                fram[0]
+
+                # read values 0 thru 9 with a slice
+                fram[0:9]
+
+                # read every other value from 0 thru 10 using a step
+                fram[0:10:2]
+        """
         if isinstance(key, int):
             if key > self._max_size:
                 raise ValueError("Register '{0}' greater than maximum FRAM size."
@@ -137,15 +150,27 @@ class FRAM:
         return read_buffer
 
     def __setitem__(self, key, value):
+        """ Write the value at the given index, or values in a slice.
+
+            .. code-block:: python
+
+                # write single index
+                fram[0] = 1
+
+                # write values 0 thru 4 with a slice
+                fram[0:4] = [0,1,2,3]
+
+            .. note:: Slice stepping is not available when writing
+        """
         if self.write_protected:
             raise RuntimeError("FRAM currently write protected.")
 
         if isinstance(key, int):
             if not isinstance(value, int):
                 raise ValueError("Data must be an integer.")
-            if key.start > self._max_size:
+            if key > self._max_size:
                 raise ValueError("Requested register '{0}' greater than maximum"
-                                 " FRAM size. ({1})".format(key.start,
+                                 " FRAM size. ({1})".format(key,
                                                             self._max_size))
 
             self._write_register(key.start, value)
@@ -184,23 +209,23 @@ class FRAM_I2C(FRAM):
     :param: int address: I2C address of FRAM. Default address is ``0x50``.
     :param: bool write_protect: Turns on/off initial write protection.
                                 Default is ``False``.
-    :param: wp_pin: Physical pin connected to the ``WP`` breakout pin.
+    :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
                     Must be a ``digitalio.DigitalInOut`` object.
     """
     #pylint: disable=too-many-arguments
     def __init__(self, i2c_bus, address=0x50, write_protect=False,
                  wp_pin=None):
-        i2c_bus.try_lock()
-        i2c_bus.writeto((0xF8 >> 1), bytearray([(address << 1)]), stop=False)
+        from adafruit_bus_device.i2c_device import I2CDevice as i2cdev
+        dev_id_addr = 0xF8 >> 1
         read_buf = bytearray(3)
-        i2c_bus.readfrom_into((0xF9 >> 1), read_buf)
+        with i2cdev(i2c_bus, dev_id_addr) as dev_id:
+            dev_id.write(bytearray([(address << 1)]), stop=False)
+            dev_id.readinto(read_buf)
         manf_id = (((read_buf[0] << 4) +(read_buf[1] >> 4)))
         prod_id = (((read_buf[1] & 0x0F) << 8) + read_buf[2])
         if (manf_id != _I2C_MANF_ID) and (prod_id != _I2C_PROD_ID):
             raise OSError("FRAM I2C device not found.")
-        i2c_bus.unlock()
 
-        from adafruit_bus_device.i2c_device import I2CDevice as i2cdev
         self._i2c = i2cdev(i2c_bus, address)
         super().__init__(_MAX_SIZE_I2C, write_protect, wp_pin)
 
