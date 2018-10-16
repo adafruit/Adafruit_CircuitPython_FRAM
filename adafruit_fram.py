@@ -173,7 +173,7 @@ class FRAM:
                                  " FRAM size. ({1})".format(key,
                                                             self._max_size))
 
-            self._write_register(key.start, value)
+            self._write_register(key, value)
 
         elif isinstance(key, slice):
             if not isinstance(value, (bytearray, list, tuple)):
