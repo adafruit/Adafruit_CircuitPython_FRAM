@@ -76,13 +76,6 @@ class FRAM:
             self._wp_pin = wp_pin
 
     @property
-    def max_size(self):
-        """ The maximum size of the current FRAM chip. This is the highest
-            register location that can be read or written to.
-        """
-        return self._max_size
-
-    @property
     def write_wraparound(self):
         """ Determines if sequential writes will wrapaound the ``FRAM.max_size``
             address. If ``False``, and a requested write will extend beyond the
@@ -115,6 +108,23 @@ class FRAM:
         self._wp = value
         if not self._wp_pin is None:
             self._wp_pin.value = value
+
+    def __len__(self):
+        """ The maximum size of the current FRAM chip. This is the highest
+            register location that can be read or written to.
+
+            .. code-block:: python
+
+                fram = adafruit_fram.FRAM()
+
+                # maximum size returned by len()
+                len(fram)
+
+                # can be used with range
+                for i in range(0, len(fram))
+        """
+        return self._max_size
+
 
     def __getitem__(self, key):
         """ Read the value at the given index, or values in a slice.
