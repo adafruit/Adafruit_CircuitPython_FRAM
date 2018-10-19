@@ -134,7 +134,8 @@ class FRAM:
             if key > self._max_size:
                 raise ValueError("Register '{0}' greater than maximum FRAM size."
                                  " ({1})".format(key, self._max_size))
-            read_buffer = self._read_byte(key)
+            buffer = bytearray(1)
+            read_buffer = self._read_register(key, buffer)
         elif isinstance(key, slice):
             registers = list(range(key.start if not key.start is None else 0,
                                    key.stop if not key.stop is None else self._max_size,
@@ -143,9 +144,8 @@ class FRAM:
                 raise ValueError("Register + Length greater than maximum FRAM size."
                                  " ({0})".format(self._max_size))
 
-            read_buffer = bytearray(len(registers))
-            for i, register in enumerate(registers):
-                read_buffer[i] = self._read_byte(register)[0]
+            buffer = bytearray(len(registers))
+            read_buffer = self._read_register(registers[0], buffer)
 
         return read_buffer
 
@@ -187,9 +187,6 @@ class FRAM:
 
             self._write_page(key.start, value, self._wraparound)
 
-    def _read_byte(self, register):
-        return self._read_register(register)
-
     def _read_register(self, register):
         # Implemented by subclass
         raise NotImplementedError
@@ -229,11 +226,10 @@ class FRAM_I2C(FRAM):
         self._i2c = i2cdev(i2c_bus, address)
         super().__init__(_MAX_SIZE_I2C, write_protect, wp_pin)
 
-    def _read_register(self, register):
+    def _read_register(self, register, read_buffer):
         write_buffer = bytearray(2)
         write_buffer[0] = register >> 8
         write_buffer[1] = register & 0xFF
-        read_buffer = bytearray(1)
         with self._i2c as i2c:
             i2c.write_then_readinto(write_buffer, read_buffer)
         return read_buffer
