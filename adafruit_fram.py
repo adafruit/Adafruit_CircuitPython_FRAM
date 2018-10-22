@@ -67,7 +67,6 @@ class FRAM:
         self._wp = write_protect
         self._wraparound = False
         if not wp_pin is None:
-            #import digitalio
             self._wp_pin = wp_pin
             # Make sure write_prot is set to output
             self._wp_pin.switch_to_output()
@@ -136,9 +135,6 @@ class FRAM:
 
                 # read values 0 thru 9 with a slice
                 fram[0:9]
-
-                # read every other value from 0 thru 10 using a step
-                fram[0:10:2]
         """
         if isinstance(key, int):
             if key > self._max_size:
@@ -147,9 +143,11 @@ class FRAM:
             buffer = bytearray(1)
             read_buffer = self._read_register(key, buffer)
         elif isinstance(key, slice):
-            registers = list(range(key.start if not key.start is None else 0,
-                                   key.stop if not key.stop is None else self._max_size,
-                                   key.step if not key.step is None else 1))
+            if key.step is not None:
+                raise ValueError("Slice stepping is not currently available.")
+
+            registers = list(range(key.start if key.start is not None else 0,
+                                   key.stop if key.stop is not None else self._max_size))
             if (registers[0] + len(registers)) > self._max_size:
                 raise ValueError("Register + Length greater than maximum FRAM size."
                                  " ({0})".format(self._max_size))
@@ -160,52 +158,38 @@ class FRAM:
         return read_buffer
 
     def __setitem__(self, key, value):
-        """ Write the value at the given index, or values in a slice.
+        """ Write the value at the given starting index.
 
             .. code-block:: python
 
                 # write single index
                 fram[0] = 1
 
-                # write values 0 thru 4 with a slice
-                fram[0:4] = [0,1,2,3]
-
-            .. note:: Slice stepping is not available when writing
+                # write values 0 thru 4 with a list
+                fram[0] = [0,1,2,3]
         """
         if self.write_protected:
             raise RuntimeError("FRAM currently write protected.")
 
         if isinstance(key, int):
-            if not isinstance(value, int):
-                raise ValueError("Data must be an integer.")
+            if not isinstance(value, (int, bytearray, list, tuple)):
+                raise ValueError("Data must be a single integer, or a bytearray,"
+                                 " list, or tuple.")
             if key > self._max_size:
                 raise ValueError("Requested register '{0}' greater than maximum"
                                  " FRAM size. ({1})".format(key,
                                                             self._max_size))
 
-            self._write_register(key, value)
+            self._write(key, value, self._wraparound)
 
         elif isinstance(key, slice):
-            if not isinstance(value, (bytearray, list, tuple)):
-                raise ValueError("Data must be either a bytearray, list, or tuple.")
-            if key.start > self._max_size:
-                raise ValueError("Requested register '{0}' greater than maximum"
-                                 " FRAM size. ({1})".format(key.start,
-                                                            self._max_size))
-            if not key.step is None:
-                raise ValueError("Slice steps are not allowed during write operations.")
+            raise ValueError("Slicing not available during write operations.")
 
-            self._write_page(key.start, value, self._wraparound)
-
-    def _read_register(self, register):
+    def _read_register(self, register, buffer):
         # Implemented by subclass
         raise NotImplementedError
 
-    def _write_register(self, register, data):
-        # Implemented by subclass
-        raise NotImplementedError
-
-    def _write_page(self, start_register, data, wraparound):
+    def _write(self, start_register, data, wraparound):
         # Implemened by subclass
         raise NotImplementedError
 
@@ -244,23 +228,19 @@ class FRAM_I2C(FRAM):
             i2c.write_then_readinto(write_buffer, read_buffer)
         return read_buffer
 
-    def _write_register(self, register, data):
-        buffer = bytearray(3)
-        buffer[0] = register >> 8
-        buffer[1] = register & 0xFF
-        buffer[2] = data
-        with self._i2c as i2c:
-            i2c.write(buffer)
-
-    def _write_page(self, start_register, data, wraparound=False):
+    def _write(self, start_register, data, wraparound=False):
         # Decided against using the chip's "Page Write", since that would require
         # doubling the memory usage by creating a buffer that includes the passed
         # in data so that it can be sent all in one `i2c.write`. The single-write
         # method is slower, and forces us to handle wraparound, but I feel this
         # is a better tradeoff for limiting the memory required for large writes.
         buffer = bytearray(3)
-        data_length = len(data)
-        if (start_register + data_length) > self._max_size:
+        if not isinstance(data, int):
+            data_length = len(data)
+        else:
+            data_length = 1
+            data = [data]
+        if (start_register + data_length) - 1 > self._max_size:
             if wraparound:
                 pass
             else:
