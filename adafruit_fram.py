@@ -185,7 +185,7 @@ class FRAM:
         elif isinstance(key, slice):
             raise ValueError("Slicing not available during write operations.")
 
-    def _read_register(self, register, buffer):
+    def _read_register(self, register, read_buffer):
         # Implemented by subclass
         raise NotImplementedError
 
