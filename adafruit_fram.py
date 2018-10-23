@@ -76,9 +76,9 @@ class FRAM:
 
     @property
     def write_wraparound(self):
-        """ Determines if sequential writes will wrapaound the ``FRAM.max_size``
-            address. If ``False``, and a requested write will extend beyond the
-            maximum size, an exception is raised.
+        """ Determines if sequential writes will wrapaound highest memory address
+            (``len(FRAM)``) address. If ``False``, and a requested write will
+            extend beyond the maximum size, an exception is raised.
         """
         return self._wraparound
 
@@ -114,7 +114,7 @@ class FRAM:
 
             .. code-block:: python
 
-                fram = adafruit_fram.FRAM()
+                fram = adafruit_fram.FRAM_xxx() # xxx = 'I2C' or 'SPI'
 
                 # maximum size returned by len()
                 len(fram)
