@@ -105,12 +105,6 @@ class FRAM:
         """
         return self._wp if self._wp_pin is None else self._wp_pin.value
 
-    @write_protected.setter
-    def write_protected(self, value):
-        self._wp = value
-        if not self._wp_pin is None:
-            self._wp_pin.value = value
-
     def __len__(self):
         """ The maximum size of the current FRAM chip. This is the highest
             register location that can be read or written to.
@@ -261,6 +255,15 @@ class FRAM_I2C(FRAM):
                 buffer[2] = data[i]
                 i2c.write(buffer)
 
+    # pylint: disable=no-member
+    @FRAM.write_protected.setter
+    def write_protected(self, value):
+        if value not in (True, False):
+            raise ValueError("Write protected value must be 'True' or 'False'.")
+        self._wp = value
+        if not self._wp_pin is None:
+            self._wp_pin.value = value
+
 # the following pylint disables are related to the '_SPI_OPCODE' consts, the super
 # class setter '@FRAM.write_protected.setter', and pylint not being able to see
 # 'spi.write()' in SPIDevice. Travis run for reference:
@@ -346,6 +349,8 @@ class FRAM_SPI(FRAM):
         # While it is possible to protect block ranges on the SPI chip,
         # it seems superfluous to do so. So, block protection always protects
         # the entire memory (BP0 and BP1).
+        if value not in (True, False):
+            raise ValueError("Write protected value must be 'True' or 'False'.")
         self._wp = value
         write_buffer = bytearray(2)
         write_buffer[0] = _SPI_OPCODE_WRSR
