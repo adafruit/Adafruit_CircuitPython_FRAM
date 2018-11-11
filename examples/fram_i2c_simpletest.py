@@ -34,5 +34,5 @@ print(fram[0])
 ##       problems on memory-constrained platforms.
 
 #values = list(range(100)) # or bytearray or tuple
-#fram[0:100] = values
-#print(fram[0:100])
+#fram[0] = values
+#print(fram[0:99])
