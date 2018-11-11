@@ -57,6 +57,9 @@ _MAX_SIZE_SPI = const(8191)
 _I2C_MANF_ID = const(0x0A)
 _I2C_PROD_ID = const(0x510)
 
+_SPI_MANF_ID = const(0x04)
+_SPI_PROD_ID = const(0x302)
+
 class FRAM:
     """
     Driver base for the FRAM Breakout.
@@ -257,3 +260,100 @@ class FRAM_I2C(FRAM):
                     buffer[1] = ((start_register + i) - self._max_size) & 0xFF
                 buffer[2] = data[i]
                 i2c.write(buffer)
+
+# the following pylint disables are related to the '_SPI_OPCODE' consts, the super
+# class setter '@FRAM.write_protected.setter', and pylint not being able to see
+# 'spi.write()' in SPIDevice. Travis run for reference:
+# https://travis-ci.com/sommersoft/Adafruit_CircuitPython_FRAM/builds/87112669
+
+# pylint: disable=no-member,undefined-variable
+class FRAM_SPI(FRAM):
+    """ SPI class for FRAM.
+
+    :param: ~busio.SPI spi_bus: The SPI bus the FRAM is connected to.
+    :param: ~digitalio.DigitalInOut spi_cs: The SPI CS pin.
+    :param: bool write_protect: Turns on/off initial write protection.
+                                Default is ``False``.
+    :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
+                    Must be a ``digitalio.DigitalInOut`` object.
+    :param int baudrate: SPI baudrate to use. Default is ``1000000``.
+    """
+
+    _SPI_OPCODE_WREN = const(0x6) # Set write enable latch
+    _SPI_OPCODE_WRDI = const(0x4) # Reset write enable latch
+    _SPI_OPCODE_RDSR = const(0x5) # Read status register
+    _SPI_OPCODE_WRSR = const(0x1) # Write status register
+    _SPI_OPCODE_READ = const(0x3) # Read memory code
+    _SPI_OPCODE_WRITE = const(0x2) # Write memory code
+    _SPI_OPCODE_RDID = const(0x9F) # Read device ID
+
+    #pylint: disable=too-many-arguments,too-many-locals
+    def __init__(self, spi_bus, spi_cs, write_protect=False,
+                 wp_pin=None, baudrate=100000):
+        from adafruit_bus_device.spi_device import SPIDevice as spidev
+        _spi = spidev(spi_bus, spi_cs, baudrate=baudrate)
+
+        read_buffer = bytearray(4)
+        with _spi as spi:
+            spi.write(bytearray([_SPI_OPCODE_RDID]))
+            spi.readinto(read_buffer)
+        prod_id = (read_buffer[3] << 8) + (read_buffer[2])
+        if (read_buffer[0] != _SPI_MANF_ID) and (prod_id != _SPI_PROD_ID):
+            raise OSError("FRAM SPI device not found.")
+
+        self._spi = _spi
+        super().__init__(_MAX_SIZE_SPI, write_protect, wp_pin)
+
+    def _read_register(self, register, read_buffer):
+        write_buffer = bytearray(3)
+        write_buffer[0] = _SPI_OPCODE_READ
+        write_buffer[1] = register >> 8
+        write_buffer[2] = register & 0xFF
+        #read_buffer = bytearray(1)
+        with self._spi as spi:
+            spi.write(write_buffer)
+            spi.readinto(read_buffer)
+        return read_buffer
+
+    def _write(self, start_register, data, wraparound=False):
+        buffer = bytearray(3)
+        if not isinstance(data, int):
+            data_length = len(data)
+        else:
+            data_length = 1
+            data = [data]
+        if (start_register + data_length) - 1 > self._max_size:
+            if wraparound:
+                pass
+            else:
+                raise ValueError("Starting register + data length extends beyond"
+                                 " FRAM maximum size. Use 'wraparound=True' to"
+                                 " override this warning.")
+        with self._spi as spi:
+            spi.write(bytearray([_SPI_OPCODE_WREN]))
+        with self._spi as spi:
+            buffer[0] = _SPI_OPCODE_WRITE
+            buffer[1] = start_register >> 8
+            buffer[2] = start_register & 0xFF
+            spi.write(buffer)
+            for i in range(0, data_length):
+                spi.write(bytearray([data[i]]))
+        with self._spi as spi:
+            spi.write(bytearray([_SPI_OPCODE_WRDI]))
+
+    @FRAM.write_protected.setter
+    def write_protected(self, value):
+        # While it is possible to protect block ranges on the SPI chip,
+        # it seems superfluous to do so. So, block protection always protects
+        # the entire memory (BP0 and BP1).
+        self._wp = value
+        write_buffer = bytearray(2)
+        write_buffer[0] = _SPI_OPCODE_WRSR
+        if value:
+            write_buffer[1] = 0x8C # set WPEN, BP0, and BP1
+        else:
+            write_buffer[1] = 0x00 # clear WPEN, BP0, and BP1
+        with self._spi as spi:
+            spi.write(write_buffer)
+        if not self._wp_pin is None:
+            self._wp_pin.value = value
