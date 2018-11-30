@@ -312,7 +312,6 @@ class FRAM_SPI(FRAM):
         write_buffer[0] = _SPI_OPCODE_READ
         write_buffer[1] = register >> 8
         write_buffer[2] = register & 0xFF
-        #read_buffer = bytearray(1)
         with self._spi as spi:
             spi.write(write_buffer)
             spi.readinto(read_buffer)
@@ -360,5 +359,5 @@ class FRAM_SPI(FRAM):
             write_buffer[1] = 0x00 # clear WPEN, BP0, and BP1
         with self._spi as spi:
             spi.write(write_buffer)
-        if not self._wp_pin is None:
+        if self._wp_pin is not None:
             self._wp_pin.value = value
