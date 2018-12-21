@@ -9,8 +9,8 @@ Introduction
     :target: https://discord.gg/nBQh6qu
     :alt: Discord
 
-.. image:: https://travis-ci.org/adafruit/Adafruit_CircuitPython_FRAM.svg?branch=master
-    :target: https://travis-ci.org/adafruit/Adafruit_CircuitPython_FRAM
+.. image:: https://travis-ci.com/adafruit/Adafruit_CircuitPython_FRAM.svg?branch=master
+    :target: https://travis-ci.com/adafruit/Adafruit_CircuitPython_FRAM
     :alt: Build Status
 
 CircuitPython/Python library to support the I2C and SPI FRAM Breakouts.
