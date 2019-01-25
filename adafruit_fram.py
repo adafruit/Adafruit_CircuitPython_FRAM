@@ -134,7 +134,7 @@ class FRAM:
                 fram[0:9]
         """
         if isinstance(address, int):
-            if not (0 < address < self._max_size):
+            if not 0 < address < self._max_size:
                 raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
                                  .format(address, self._max_size))
             buffer = bytearray(1)
@@ -143,15 +143,15 @@ class FRAM:
             if address.step is not None:
                 raise ValueError("Slice stepping is not currently available.")
 
-            registers = list(range(address.start if address.start is not None else 0,
-                                   address.stop + 1 if address.stop is not None else self._max_size))
-            if registers[0] < 0 or (registers[0] + len(registers)) > self._max_size:
+            regs = list(range(address.start if address.start is not None else 0,
+                              address.stop + 1 if address.stop is not None else self._max_size))
+            if regs[0] < 0 or (regs[0] + len(regs)) > self._max_size:
                 raise ValueError("Address slice out of range. It must be 0 <= [starting address"
-                                 ":stopping address] < {1}."
-                                 .format(address, self._max_size))
+                                 ":stopping address] < {0}."
+                                 .format(self._max_size))
 
-            buffer = bytearray(len(registers))
-            read_buffer = self._read_register(registers[0], buffer)
+            buffer = bytearray(len(regs))
+            read_buffer = self._read_register(regs[0], buffer)
 
         return read_buffer
 
@@ -173,7 +173,7 @@ class FRAM:
             if not isinstance(value, (int, bytearray, list, tuple)):
                 raise ValueError("Data must be a single integer, or a bytearray,"
                                  " list, or tuple.")
-            if not (0 < address < self._max_size):
+            if not 0 < address < self._max_size:
                 raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
                                  .format(address, self._max_size))
 
