@@ -107,7 +107,7 @@ class FRAM:
 
     def __len__(self):
         """ The size of the current FRAM chip. This is one more than the highest
-            register location that can be read or written to.
+            address location that can be read or written to.
 
             .. code-block:: python
 
@@ -138,7 +138,7 @@ class FRAM:
                 raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
                                  .format(address, self._max_size))
             buffer = bytearray(1)
-            read_buffer = self._read_register(address, buffer)
+            read_buffer = self._read_address(address, buffer)
         elif isinstance(address, slice):
             if address.step is not None:
                 raise ValueError("Slice stepping is not currently available.")
@@ -151,7 +151,7 @@ class FRAM:
                                  .format(self._max_size))
 
             buffer = bytearray(len(regs))
-            read_buffer = self._read_register(regs[0], buffer)
+            read_buffer = self._read_address(regs[0], buffer)
 
         return read_buffer
 
@@ -182,11 +182,11 @@ class FRAM:
         elif isinstance(address, slice):
             raise ValueError("Slicing not available during write operations.")
 
-    def _read_register(self, register, read_buffer):
+    def _read_address(self, address, read_buffer):
         # Implemented by subclass
         raise NotImplementedError
 
-    def _write(self, start_register, data, wraparound):
+    def _write(self, start_address, data, wraparound):
         # Implemened by subclass
         raise NotImplementedError
 
@@ -217,15 +217,15 @@ class FRAM_I2C(FRAM):
         self._i2c = i2cdev(i2c_bus, address)
         super().__init__(_MAX_SIZE_I2C, write_protect, wp_pin)
 
-    def _read_register(self, register, read_buffer):
+    def _read_address(self, address, read_buffer):
         write_buffer = bytearray(2)
-        write_buffer[0] = register >> 8
-        write_buffer[1] = register & 0xFF
+        write_buffer[0] = address >> 8
+        write_buffer[1] = address & 0xFF
         with self._i2c as i2c:
             i2c.write_then_readinto(write_buffer, read_buffer)
         return read_buffer
 
-    def _write(self, start_register, data, wraparound=False):
+    def _write(self, start_address, data, wraparound=False):
         # Decided against using the chip's "Page Write", since that would require
         # doubling the memory usage by creating a buffer that includes the passed
         # in data so that it can be sent all in one `i2c.write`. The single-write
@@ -237,21 +237,21 @@ class FRAM_I2C(FRAM):
         else:
             data_length = 1
             data = [data]
-        if (start_register + data_length) > self._max_size:
+        if (start_address + data_length) > self._max_size:
             if wraparound:
                 pass
             else:
-                raise ValueError("Starting register + data length extends beyond"
+                raise ValueError("Starting address + data length extends beyond"
                                  " FRAM maximum address. Use ``write_wraparound`` to"
                                  " override this warning.")
         with self._i2c as i2c:
             for i in range(0, data_length):
-                if not (start_register + i) > self._max_size - 1:
-                    buffer[0] = (start_register + i) >> 8
-                    buffer[1] = (start_register + i) & 0xFF
+                if not (start_address + i) > self._max_size - 1:
+                    buffer[0] = (start_address + i) >> 8
+                    buffer[1] = (start_address + i) & 0xFF
                 else:
-                    buffer[0] = ((start_register + i) - self._max_size + 1) >> 8
-                    buffer[1] = ((start_register + i) - self._max_size + 1) & 0xFF
+                    buffer[0] = ((start_address + i) - self._max_size + 1) >> 8
+                    buffer[1] = ((start_address + i) - self._max_size + 1) & 0xFF
                 buffer[2] = data[i]
                 i2c.write(buffer)
 
@@ -307,36 +307,36 @@ class FRAM_SPI(FRAM):
         self._spi = _spi
         super().__init__(_MAX_SIZE_SPI, write_protect, wp_pin)
 
-    def _read_register(self, register, read_buffer):
+    def _read_address(self, address, read_buffer):
         write_buffer = bytearray(3)
         write_buffer[0] = _SPI_OPCODE_READ
-        write_buffer[1] = register >> 8
-        write_buffer[2] = register & 0xFF
+        write_buffer[1] = address >> 8
+        write_buffer[2] = address & 0xFF
         with self._spi as spi:
             spi.write(write_buffer)
             spi.readinto(read_buffer)
         return read_buffer
 
-    def _write(self, start_register, data, wraparound=False):
+    def _write(self, start_addressr, data, wraparound=False):
         buffer = bytearray(3)
         if not isinstance(data, int):
             data_length = len(data)
         else:
             data_length = 1
             data = [data]
-        if (start_register + data_length) > self._max_size:
+        if (start_address + data_length) > self._max_size:
             if wraparound:
                 pass
             else:
-                raise ValueError("Starting register + data length extends beyond"
-                                 " FRAM maximum register. Use 'wraparound=True' to"
+                raise ValueError("Starting address + data length extends beyond"
+                                 " FRAM maximum address. Use 'wraparound=True' to"
                                  " override this warning.")
         with self._spi as spi:
             spi.write(bytearray([_SPI_OPCODE_WREN]))
         with self._spi as spi:
             buffer[0] = _SPI_OPCODE_WRITE
-            buffer[1] = start_register >> 8
-            buffer[2] = start_register & 0xFF
+            buffer[1] = start_address >> 8
+            buffer[2] = start_address & 0xFF
             spi.write(buffer)
             for i in range(0, data_length):
                 spi.write(bytearray([data[i]]))
