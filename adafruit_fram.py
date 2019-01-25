@@ -174,8 +174,7 @@ class FRAM:
                                  " list, or tuple.")
             if key >= self._max_size:
                 raise ValueError("Requested register '{0}' greater than maximum"
-                                 " FRAM register. ({1})".format(key,
-                                                            self._max_size - 1))
+                                 " FRAM register. ({1})".format(key, self._max_size - 1))
 
             self._write(key, value, self._wraparound)
 
