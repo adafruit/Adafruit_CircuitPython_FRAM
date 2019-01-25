@@ -134,7 +134,7 @@ class FRAM:
                 fram[0:9]
         """
         if isinstance(key, int):
-            if key > self._max_size - 1:
+            if key >= self._max_size:
                 raise ValueError("Register '{0}' greater than maximum FRAM register."
                                  " ({1})".format(key, self._max_size - 1))
             buffer = bytearray(1)
@@ -172,7 +172,7 @@ class FRAM:
             if not isinstance(value, (int, bytearray, list, tuple)):
                 raise ValueError("Data must be a single integer, or a bytearray,"
                                  " list, or tuple.")
-            if key > self._max_size - 1:
+            if key >= self._max_size:
                 raise ValueError("Requested register '{0}' greater than maximum"
                                  " FRAM register. ({1})".format(key,
                                                             self._max_size - 1))
