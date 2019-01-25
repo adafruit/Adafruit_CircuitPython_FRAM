@@ -117,12 +117,12 @@ class FRAM:
                 len(fram)
 
                 # can be used with range
-                for i in range(0, len(fram) - 1)
+                for i in range(0, len(fram))
         """
         return self._max_size
 
 
-    def __getitem__(self, key):
+    def __getitem__(self, address):
         """ Read the value at the given index, or values in a slice.
 
             .. code-block:: python
@@ -133,28 +133,29 @@ class FRAM:
                 # read values 0 thru 9 with a slice
                 fram[0:9]
         """
-        if isinstance(key, int):
-            if key >= self._max_size:
-                raise ValueError("Register '{0}' greater than maximum FRAM register."
-                                 " ({1})".format(key, self._max_size - 1))
+        if isinstance(address, int):
+            if not (0 < address < self._max_size):
+                raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
+                                 .format(address, self._max_size))
             buffer = bytearray(1)
-            read_buffer = self._read_register(key, buffer)
-        elif isinstance(key, slice):
-            if key.step is not None:
+            read_buffer = self._read_register(address, buffer)
+        elif isinstance(address, slice):
+            if address.step is not None:
                 raise ValueError("Slice stepping is not currently available.")
 
-            registers = list(range(key.start if key.start is not None else 0,
-                                   key.stop if key.stop is not None else self._max_size))
-            if (registers[0] + len(registers)) > self._max_size:
-                raise ValueError("Register + Length greater than maximum FRAM register."
-                                 " ({0})".format(self._max_size - 1))
+            registers = list(range(address.start if address.start is not None else 0,
+                                   address.stop + 1 if address.stop is not None else self._max_size))
+            if registers[0] < 0 or (registers[0] + len(registers)) > self._max_size:
+                raise ValueError("Address slice out of range. It must be 0 <= [starting address"
+                                 ":stopping address] < {1}."
+                                 .format(address, self._max_size))
 
             buffer = bytearray(len(registers))
             read_buffer = self._read_register(registers[0], buffer)
 
         return read_buffer
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, address, value):
         """ Write the value at the given starting index.
 
             .. code-block:: python
@@ -168,17 +169,17 @@ class FRAM:
         if self.write_protected:
             raise RuntimeError("FRAM currently write protected.")
 
-        if isinstance(key, int):
+        if isinstance(address, int):
             if not isinstance(value, (int, bytearray, list, tuple)):
                 raise ValueError("Data must be a single integer, or a bytearray,"
                                  " list, or tuple.")
-            if key >= self._max_size:
-                raise ValueError("Requested register '{0}' greater than maximum"
-                                 " FRAM register. ({1})".format(key, self._max_size - 1))
+            if not (0 < address < self._max_size):
+                raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
+                                 .format(address, self._max_size))
 
-            self._write(key, value, self._wraparound)
+            self._write(address, value, self._wraparound)
 
-        elif isinstance(key, slice):
+        elif isinstance(address, slice):
             raise ValueError("Slicing not available during write operations.")
 
     def _read_register(self, register, read_buffer):
@@ -241,7 +242,7 @@ class FRAM_I2C(FRAM):
                 pass
             else:
                 raise ValueError("Starting register + data length extends beyond"
-                                 " FRAM maximum register. Use ``write_wraparound`` to"
+                                 " FRAM maximum address. Use ``write_wraparound`` to"
                                  " override this warning.")
         with self._i2c as i2c:
             for i in range(0, data_length):
