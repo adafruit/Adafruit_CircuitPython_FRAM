@@ -106,7 +106,7 @@ class FRAM:
         return self._wp if self._wp_pin is None else self._wp_pin.value
 
     def __len__(self):
-        """ The maximum size of the current FRAM chip. This is the highest
+        """ The size of the current FRAM chip. This is one more than the highest
             register location that can be read or written to.
 
             .. code-block:: python
@@ -119,7 +119,7 @@ class FRAM:
                 # can be used with range
                 for i in range(0, len(fram))
         """
-        return self._max_size
+        return self._max_size + 1
 
 
     def __getitem__(self, key):
