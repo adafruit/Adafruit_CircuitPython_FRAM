@@ -134,7 +134,7 @@ class FRAM:
                 fram[0:9]
         """
         if isinstance(address, int):
-            if not 0 < address < self._max_size:
+            if not 0 <= address < self._max_size:
                 raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
                                  .format(address, self._max_size))
             buffer = bytearray(1)
@@ -173,7 +173,7 @@ class FRAM:
             if not isinstance(value, (int, bytearray, list, tuple)):
                 raise ValueError("Data must be a single integer, or a bytearray,"
                                  " list, or tuple.")
-            if not 0 < address < self._max_size:
+            if not 0 <= address < self._max_size:
                 raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
                                  .format(address, self._max_size))
 
