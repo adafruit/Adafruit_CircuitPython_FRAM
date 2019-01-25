@@ -317,7 +317,7 @@ class FRAM_SPI(FRAM):
             spi.readinto(read_buffer)
         return read_buffer
 
-    def _write(self, start_addressr, data, wraparound=False):
+    def _write(self, start_address, data, wraparound=False):
         buffer = bytearray(3)
         if not isinstance(data, int):
             data_length = len(data)
