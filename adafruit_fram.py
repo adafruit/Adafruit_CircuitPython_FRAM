@@ -51,8 +51,8 @@ from micropython import const
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_FRAM.git"
 
-_MAX_SIZE_I2C = const(32767)
-_MAX_SIZE_SPI = const(8191)
+_MAX_SIZE_I2C = const(32768)
+_MAX_SIZE_SPI = const(8192)
 
 _I2C_MANF_ID = const(0x0A)
 _I2C_PROD_ID = const(0x510)
@@ -80,7 +80,7 @@ class FRAM:
     @property
     def write_wraparound(self):
         """ Determines if sequential writes will wrapaound highest memory address
-            (``len(FRAM)``) address. If ``False``, and a requested write will
+            (``len(FRAM) - 1``) address. If ``False``, and a requested write will
             extend beyond the maximum size, an exception is raised.
         """
         return self._wraparound
@@ -113,13 +113,13 @@ class FRAM:
 
                 fram = adafruit_fram.FRAM_xxx() # xxx = 'I2C' or 'SPI'
 
-                # maximum size returned by len()
+                # size returned by len()
                 len(fram)
 
                 # can be used with range
-                for i in range(0, len(fram))
+                for i in range(0, len(fram) - 1)
         """
-        return self._max_size + 1
+        return self._max_size
 
 
     def __getitem__(self, key):
@@ -134,9 +134,9 @@ class FRAM:
                 fram[0:9]
         """
         if isinstance(key, int):
-            if key > self._max_size:
-                raise ValueError("Register '{0}' greater than maximum FRAM size."
-                                 " ({1})".format(key, self._max_size))
+            if key > self._max_size - 1:
+                raise ValueError("Register '{0}' greater than maximum FRAM register."
+                                 " ({1})".format(key, self._max_size - 1))
             buffer = bytearray(1)
             read_buffer = self._read_register(key, buffer)
         elif isinstance(key, slice):
@@ -146,8 +146,8 @@ class FRAM:
             registers = list(range(key.start if key.start is not None else 0,
                                    key.stop if key.stop is not None else self._max_size))
             if (registers[0] + len(registers)) > self._max_size:
-                raise ValueError("Register + Length greater than maximum FRAM size."
-                                 " ({0})".format(self._max_size))
+                raise ValueError("Register + Length greater than maximum FRAM register."
+                                 " ({0})".format(self._max_size - 1))
 
             buffer = bytearray(len(registers))
             read_buffer = self._read_register(registers[0], buffer)
@@ -172,10 +172,10 @@ class FRAM:
             if not isinstance(value, (int, bytearray, list, tuple)):
                 raise ValueError("Data must be a single integer, or a bytearray,"
                                  " list, or tuple.")
-            if key > self._max_size:
+            if key > self._max_size - 1:
                 raise ValueError("Requested register '{0}' greater than maximum"
-                                 " FRAM size. ({1})".format(key,
-                                                            self._max_size))
+                                 " FRAM register. ({1})".format(key,
+                                                            self._max_size - 1))
 
             self._write(key, value, self._wraparound)
 
@@ -237,21 +237,21 @@ class FRAM_I2C(FRAM):
         else:
             data_length = 1
             data = [data]
-        if (start_register + data_length) - 1 > self._max_size:
+        if (start_register + data_length) > self._max_size:
             if wraparound:
                 pass
             else:
                 raise ValueError("Starting register + data length extends beyond"
-                                 " FRAM maximum size. Use ``write_wraparound`` to"
+                                 " FRAM maximum register. Use ``write_wraparound`` to"
                                  " override this warning.")
         with self._i2c as i2c:
             for i in range(0, data_length):
-                if not (start_register + i) > self._max_size:
+                if not (start_register + i) > self._max_size - 1:
                     buffer[0] = (start_register + i) >> 8
                     buffer[1] = (start_register + i) & 0xFF
                 else:
-                    buffer[0] = ((start_register + i) - self._max_size) >> 8
-                    buffer[1] = ((start_register + i) - self._max_size) & 0xFF
+                    buffer[0] = ((start_register + i) - self._max_size + 1) >> 8
+                    buffer[1] = ((start_register + i) - self._max_size + 1) & 0xFF
                 buffer[2] = data[i]
                 i2c.write(buffer)
 
@@ -324,12 +324,12 @@ class FRAM_SPI(FRAM):
         else:
             data_length = 1
             data = [data]
-        if (start_register + data_length) - 1 > self._max_size:
+        if (start_register + data_length) > self._max_size:
             if wraparound:
                 pass
             else:
                 raise ValueError("Starting register + data length extends beyond"
-                                 " FRAM maximum size. Use 'wraparound=True' to"
+                                 " FRAM maximum register. Use 'wraparound=True' to"
                                  " override this warning.")
         with self._spi as spi:
             spi.write(bytearray([_SPI_OPCODE_WREN]))
