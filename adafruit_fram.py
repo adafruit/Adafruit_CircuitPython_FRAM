@@ -208,7 +208,7 @@ class FRAM_I2C(FRAM):
         read_buf = bytearray(3)
         with i2cdev(i2c_bus, dev_id_addr) as dev_id:
             dev_id.write_then_readinto(bytearray([(address << 1)]),
-                                       read_buf,stop=False)
+                                       read_buf, stop=False)
         manf_id = (((read_buf[0] << 4) +(read_buf[1] >> 4)))
         prod_id = (((read_buf[1] & 0x0F) << 8) + read_buf[2])
         if (manf_id != _I2C_MANF_ID) and (prod_id != _I2C_PROD_ID):
