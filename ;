@@ -312,10 +312,9 @@ class FRAM_SPI(FRAM):
     def __init__(
         self, spi_bus, spi_cs, write_protect=False, wp_pin=None, baudrate=100000
     ):
-        from adafruit_bus_device.spi_device import (  # pylint: disable=import-outside-toplevel
+        from adafruit_bus_device.spi_device import ( # pylint: disable=import-outside-toplevel
             SPIDevice as spidev,
         )
-
         _spi = spidev(spi_bus, spi_cs, baudrate=baudrate)
 
         read_buffer = bytearray(4)
