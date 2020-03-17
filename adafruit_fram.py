@@ -60,6 +60,7 @@ _I2C_PROD_ID = const(0x510)
 _SPI_MANF_ID = const(0x04)
 _SPI_PROD_ID = const(0x302)
 
+
 class FRAM:
     """
     Driver base for the FRAM Breakout.
@@ -121,7 +122,6 @@ class FRAM:
         """
         return self._max_size
 
-
     def __getitem__(self, address):
         """ Read the value at the given index, or values in a slice.
 
@@ -135,20 +135,28 @@ class FRAM:
         """
         if isinstance(address, int):
             if not 0 <= address < self._max_size:
-                raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
-                                 .format(address, self._max_size))
+                raise ValueError(
+                    "Address '{0}' out of range. It must be 0 <= address < {1}.".format(
+                        address, self._max_size
+                    )
+                )
             buffer = bytearray(1)
             read_buffer = self._read_address(address, buffer)
         elif isinstance(address, slice):
             if address.step is not None:
                 raise ValueError("Slice stepping is not currently available.")
 
-            regs = list(range(address.start if address.start is not None else 0,
-                              address.stop + 1 if address.stop is not None else self._max_size))
+            regs = list(
+                range(
+                    address.start if address.start is not None else 0,
+                    address.stop + 1 if address.stop is not None else self._max_size,
+                )
+            )
             if regs[0] < 0 or (regs[0] + len(regs)) > self._max_size:
-                raise ValueError("Address slice out of range. It must be 0 <= [starting address"
-                                 ":stopping address] < {0}."
-                                 .format(self._max_size))
+                raise ValueError(
+                    "Address slice out of range. It must be 0 <= [starting address"
+                    ":stopping address] < {0}.".format(self._max_size)
+                )
 
             buffer = bytearray(len(regs))
             read_buffer = self._read_address(regs[0], buffer)
@@ -171,11 +179,15 @@ class FRAM:
 
         if isinstance(address, int):
             if not isinstance(value, (int, bytearray, list, tuple)):
-                raise ValueError("Data must be a single integer, or a bytearray,"
-                                 " list, or tuple.")
+                raise ValueError(
+                    "Data must be a single integer, or a bytearray," " list, or tuple."
+                )
             if not 0 <= address < self._max_size:
-                raise ValueError("Address '{0}' out of range. It must be 0 <= address < {1}."
-                                 .format(address, self._max_size))
+                raise ValueError(
+                    "Address '{0}' out of range. It must be 0 <= address < {1}.".format(
+                        address, self._max_size
+                    )
+                )
 
             self._write(address, value, self._wraparound)
 
@@ -190,6 +202,7 @@ class FRAM:
         # Implemened by subclass
         raise NotImplementedError
 
+
 class FRAM_I2C(FRAM):
     """ I2C class for FRAM.
 
@@ -200,17 +213,19 @@ class FRAM_I2C(FRAM):
     :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
                     Must be a ``digitalio.DigitalInOut`` object.
     """
-    #pylint: disable=too-many-arguments
-    def __init__(self, i2c_bus, address=0x50, write_protect=False,
-                 wp_pin=None):
-        from adafruit_bus_device.i2c_device import I2CDevice as i2cdev
+
+    # pylint: disable=too-many-arguments
+    def __init__(self, i2c_bus, address=0x50, write_protect=False, wp_pin=None):
+        from adafruit_bus_device.i2c_device import (  # pylint: disable=import-outside-toplevel
+            I2CDevice as i2cdev,
+        )
+
         dev_id_addr = 0xF8 >> 1
         read_buf = bytearray(3)
         with i2cdev(i2c_bus, dev_id_addr) as dev_id:
-            dev_id.write_then_readinto(bytearray([(address << 1)]),
-                                       read_buf)
-        manf_id = (((read_buf[0] << 4) +(read_buf[1] >> 4)))
-        prod_id = (((read_buf[1] & 0x0F) << 8) + read_buf[2])
+            dev_id.write_then_readinto(bytearray([(address << 1)]), read_buf)
+        manf_id = (read_buf[0] << 4) + (read_buf[1] >> 4)
+        prod_id = ((read_buf[1] & 0x0F) << 8) + read_buf[2]
         if (manf_id != _I2C_MANF_ID) and (prod_id != _I2C_PROD_ID):
             raise OSError("FRAM I2C device not found.")
 
@@ -241,9 +256,11 @@ class FRAM_I2C(FRAM):
             if wraparound:
                 pass
             else:
-                raise ValueError("Starting address + data length extends beyond"
-                                 " FRAM maximum address. Use ``write_wraparound`` to"
-                                 " override this warning.")
+                raise ValueError(
+                    "Starting address + data length extends beyond"
+                    " FRAM maximum address. Use ``write_wraparound`` to"
+                    " override this warning."
+                )
         with self._i2c as i2c:
             for i in range(0, data_length):
                 if not (start_address + i) > self._max_size - 1:
@@ -264,6 +281,7 @@ class FRAM_I2C(FRAM):
         if not self._wp_pin is None:
             self._wp_pin.value = value
 
+
 # the following pylint disables are related to the '_SPI_OPCODE' consts, the super
 # class setter '@FRAM.write_protected.setter', and pylint not being able to see
 # 'spi.write()' in SPIDevice. Travis run for reference:
@@ -282,18 +300,22 @@ class FRAM_SPI(FRAM):
     :param int baudrate: SPI baudrate to use. Default is ``1000000``.
     """
 
-    _SPI_OPCODE_WREN = const(0x6) # Set write enable latch
-    _SPI_OPCODE_WRDI = const(0x4) # Reset write enable latch
-    _SPI_OPCODE_RDSR = const(0x5) # Read status register
-    _SPI_OPCODE_WRSR = const(0x1) # Write status register
-    _SPI_OPCODE_READ = const(0x3) # Read memory code
-    _SPI_OPCODE_WRITE = const(0x2) # Write memory code
-    _SPI_OPCODE_RDID = const(0x9F) # Read device ID
+    _SPI_OPCODE_WREN = const(0x6)  # Set write enable latch
+    _SPI_OPCODE_WRDI = const(0x4)  # Reset write enable latch
+    _SPI_OPCODE_RDSR = const(0x5)  # Read status register
+    _SPI_OPCODE_WRSR = const(0x1)  # Write status register
+    _SPI_OPCODE_READ = const(0x3)  # Read memory code
+    _SPI_OPCODE_WRITE = const(0x2)  # Write memory code
+    _SPI_OPCODE_RDID = const(0x9F)  # Read device ID
 
-    #pylint: disable=too-many-arguments,too-many-locals
-    def __init__(self, spi_bus, spi_cs, write_protect=False,
-                 wp_pin=None, baudrate=100000):
-        from adafruit_bus_device.spi_device import SPIDevice as spidev
+    # pylint: disable=too-many-arguments,too-many-locals
+    def __init__(
+        self, spi_bus, spi_cs, write_protect=False, wp_pin=None, baudrate=100000
+    ):
+        from adafruit_bus_device.spi_device import (  # pylint: disable=import-outside-toplevel
+            SPIDevice as spidev,
+        )
+
         _spi = spidev(spi_bus, spi_cs, baudrate=baudrate)
 
         read_buffer = bytearray(4)
@@ -328,9 +350,11 @@ class FRAM_SPI(FRAM):
             if wraparound:
                 pass
             else:
-                raise ValueError("Starting address + data length extends beyond"
-                                 " FRAM maximum address. Use 'wraparound=True' to"
-                                 " override this warning.")
+                raise ValueError(
+                    "Starting address + data length extends beyond"
+                    " FRAM maximum address. Use 'wraparound=True' to"
+                    " override this warning."
+                )
         with self._spi as spi:
             spi.write(bytearray([_SPI_OPCODE_WREN]))
         with self._spi as spi:
@@ -354,9 +378,9 @@ class FRAM_SPI(FRAM):
         write_buffer = bytearray(2)
         write_buffer[0] = _SPI_OPCODE_WRSR
         if value:
-            write_buffer[1] = 0x8C # set WPEN, BP0, and BP1
+            write_buffer[1] = 0x8C  # set WPEN, BP0, and BP1
         else:
-            write_buffer[1] = 0x00 # clear WPEN, BP0, and BP1
+            write_buffer[1] = 0x00  # clear WPEN, BP0, and BP1
         with self._spi as spi:
             spi.write(write_buffer)
         if self._wp_pin is not None:
