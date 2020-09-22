@@ -51,8 +51,8 @@ from micropython import const
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_FRAM.git"
 
-_MAX_SIZE_I2C = const(32768)
-_MAX_SIZE_SPI = const(8192)
+_MAX_SIZE_I2C = const(0x8000)
+_MAX_SIZE_SPI = const(0x2000)
 
 _I2C_MANF_ID = const(0x0A)
 _I2C_PROD_ID = const(0x510)
@@ -310,7 +310,13 @@ class FRAM_SPI(FRAM):
 
     # pylint: disable=too-many-arguments,too-many-locals
     def __init__(
-        self, spi_bus, spi_cs, write_protect=False, wp_pin=None, baudrate=100000
+        self,
+        spi_bus,
+        spi_cs,
+        write_protect=False,
+        wp_pin=None,
+        baudrate=100000,
+        max_size=_MAX_SIZE_SPI,
     ):
         from adafruit_bus_device.spi_device import (  # pylint: disable=import-outside-toplevel
             SPIDevice as spidev,
@@ -327,20 +333,26 @@ class FRAM_SPI(FRAM):
             raise OSError("FRAM SPI device not found.")
 
         self._spi = _spi
-        super().__init__(_MAX_SIZE_SPI, write_protect, wp_pin)
+        super().__init__(max_size, write_protect, wp_pin)
 
     def _read_address(self, address, read_buffer):
-        write_buffer = bytearray(3)
+        write_buffer = bytearray(4)
         write_buffer[0] = _SPI_OPCODE_READ
-        write_buffer[1] = address >> 8
-        write_buffer[2] = address & 0xFF
+        if self._max_size > 0xFFFF:
+            write_buffer[1] = (address >> 16) & 0xFF
+            write_buffer[2] = (address >> 8) & 0xFF
+            write_buffer[3] = address & 0xFF
+        else:
+            write_buffer[1] = (address >> 8) & 0xFF
+            write_buffer[2] = address & 0xFF
+
         with self._spi as spi:
             spi.write(write_buffer)
             spi.readinto(read_buffer)
         return read_buffer
 
     def _write(self, start_address, data, wraparound=False):
-        buffer = bytearray(3)
+        buffer = bytearray(4)
         if not isinstance(data, int):
             data_length = len(data)
         else:
@@ -359,8 +371,13 @@ class FRAM_SPI(FRAM):
             spi.write(bytearray([_SPI_OPCODE_WREN]))
         with self._spi as spi:
             buffer[0] = _SPI_OPCODE_WRITE
-            buffer[1] = start_address >> 8
-            buffer[2] = start_address & 0xFF
+            if self._max_size > 0xFFFF:
+                buffer[1] = (start_address >> 16) & 0xFF
+                buffer[2] = (start_address >> 8) & 0xFF
+                buffer[3] = start_address & 0xFF
+            else:
+                buffer[1] = (start_address >> 8) & 0xFF
+                buffer[2] = start_address & 0xFF
             spi.write(buffer)
             for i in range(0, data_length):
                 spi.write(bytearray([data[i]]))
