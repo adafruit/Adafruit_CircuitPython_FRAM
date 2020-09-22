@@ -298,6 +298,7 @@ class FRAM_SPI(FRAM):
     :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
                     Must be a ``digitalio.DigitalInOut`` object.
     :param int baudrate: SPI baudrate to use. Default is ``1000000``.
+    :param int max_size: Size of FRAM in Bytes. Default is ``8192``.
     """
 
     _SPI_OPCODE_WREN = const(0x6)  # Set write enable latch
