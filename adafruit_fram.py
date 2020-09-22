@@ -310,8 +310,13 @@ class FRAM_SPI(FRAM):
 
     # pylint: disable=too-many-arguments,too-many-locals
     def __init__(
-        self, spi_bus, spi_cs, write_protect=False, wp_pin=None, baudrate=100000,
-        max_size=_MAX_SIZE_SPI
+        self,
+        spi_bus,
+        spi_cs,
+        write_protect=False,
+        wp_pin=None,
+        baudrate=100000,
+        max_size=_MAX_SIZE_SPI,
     ):
         from adafruit_bus_device.spi_device import (  # pylint: disable=import-outside-toplevel
             SPIDevice as spidev,
