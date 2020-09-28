@@ -68,6 +68,7 @@ _SPI_OPCODE_READ = const(0x3)  # Read memory code
 _SPI_OPCODE_WRITE = const(0x2)  # Write memory code
 _SPI_OPCODE_RDID = const(0x9F)  # Read device ID
 
+
 class FRAM:
     """
     Driver base for the FRAM Breakout.
