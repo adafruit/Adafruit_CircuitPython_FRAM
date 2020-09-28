@@ -60,6 +60,13 @@ _I2C_PROD_ID = const(0x510)
 _SPI_MANF_ID = const(0x04)
 _SPI_PROD_ID = const(0x302)
 
+_SPI_OPCODE_WREN = const(0x6)  # Set write enable latch
+_SPI_OPCODE_WRDI = const(0x4)  # Reset write enable latch
+_SPI_OPCODE_RDSR = const(0x5)  # Read status register
+_SPI_OPCODE_WRSR = const(0x1)  # Write status register
+_SPI_OPCODE_READ = const(0x3)  # Read memory code
+_SPI_OPCODE_WRITE = const(0x2)  # Write memory code
+_SPI_OPCODE_RDID = const(0x9F)  # Read device ID
 
 class FRAM:
     """
@@ -282,12 +289,6 @@ class FRAM_I2C(FRAM):
             self._wp_pin.value = value
 
 
-# the following pylint disables are related to the '_SPI_OPCODE' consts, the super
-# class setter '@FRAM.write_protected.setter', and pylint not being able to see
-# 'spi.write()' in SPIDevice. Travis run for reference:
-# https://travis-ci.com/sommersoft/Adafruit_CircuitPython_FRAM/builds/87112669
-
-# pylint: disable=no-member,undefined-variable
 class FRAM_SPI(FRAM):
     """ SPI class for FRAM.
 
@@ -300,14 +301,6 @@ class FRAM_SPI(FRAM):
     :param int baudrate: SPI baudrate to use. Default is ``1000000``.
     :param int max_size: Size of FRAM in Bytes. Default is ``8192``.
     """
-
-    _SPI_OPCODE_WREN = const(0x6)  # Set write enable latch
-    _SPI_OPCODE_WRDI = const(0x4)  # Reset write enable latch
-    _SPI_OPCODE_RDSR = const(0x5)  # Read status register
-    _SPI_OPCODE_WRSR = const(0x1)  # Write status register
-    _SPI_OPCODE_READ = const(0x3)  # Read memory code
-    _SPI_OPCODE_WRITE = const(0x2)  # Write memory code
-    _SPI_OPCODE_RDID = const(0x9F)  # Read device ID
 
     # pylint: disable=too-many-arguments,too-many-locals
     def __init__(
