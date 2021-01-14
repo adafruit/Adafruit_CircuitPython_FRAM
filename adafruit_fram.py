@@ -1,24 +1,7 @@
-# The MIT License (MIT)
+# SPDX-FileCopyrightText: 2018 Michael Schroeder for Adafruit Industries
 #
-# Copyright (c) 2018 Michael Schroeder
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# SPDX-License-Identifier: MIT
+
 """
 `adafruit_fram`
 ====================================================
@@ -88,9 +71,9 @@ class FRAM:
 
     @property
     def write_wraparound(self):
-        """ Determines if sequential writes will wrapaound highest memory address
-            (``len(FRAM) - 1``) address. If ``False``, and a requested write will
-            extend beyond the maximum size, an exception is raised.
+        """Determines if sequential writes will wrapaound highest memory address
+        (``len(FRAM) - 1``) address. If ``False``, and a requested write will
+        extend beyond the maximum size, an exception is raised.
         """
         return self._wraparound
 
@@ -102,44 +85,44 @@ class FRAM:
 
     @property
     def write_protected(self):
-        """ The status of write protection. Default value on initialization is
-            ``False``.
+        """The status of write protection. Default value on initialization is
+        ``False``.
 
-            When a ``WP`` pin is supplied during initialization, or using
-            ``write_protect_pin``, the status is tied to that pin and enables
-            hardware-level protection.
+        When a ``WP`` pin is supplied during initialization, or using
+        ``write_protect_pin``, the status is tied to that pin and enables
+        hardware-level protection.
 
-            When no ``WP`` pin is supplied, protection is only at the software
-            level in this library.
+        When no ``WP`` pin is supplied, protection is only at the software
+        level in this library.
         """
         return self._wp if self._wp_pin is None else self._wp_pin.value
 
     def __len__(self):
-        """ The size of the current FRAM chip. This is one more than the highest
-            address location that can be read or written to.
+        """The size of the current FRAM chip. This is one more than the highest
+        address location that can be read or written to.
 
-            .. code-block:: python
+        .. code-block:: python
 
-                fram = adafruit_fram.FRAM_xxx() # xxx = 'I2C' or 'SPI'
+            fram = adafruit_fram.FRAM_xxx() # xxx = 'I2C' or 'SPI'
 
-                # size returned by len()
-                len(fram)
+            # size returned by len()
+            len(fram)
 
-                # can be used with range
-                for i in range(0, len(fram))
+            # can be used with range
+            for i in range(0, len(fram))
         """
         return self._max_size
 
     def __getitem__(self, address):
-        """ Read the value at the given index, or values in a slice.
+        """Read the value at the given index, or values in a slice.
 
-            .. code-block:: python
+        .. code-block:: python
 
-                # read single index
-                fram[0]
+            # read single index
+            fram[0]
 
-                # read values 0 thru 9 with a slice
-                fram[0:9]
+            # read values 0 thru 9 with a slice
+            fram[0:9]
         """
         if isinstance(address, int):
             if not 0 <= address < self._max_size:
@@ -172,15 +155,15 @@ class FRAM:
         return read_buffer
 
     def __setitem__(self, address, value):
-        """ Write the value at the given starting index.
+        """Write the value at the given starting index.
 
-            .. code-block:: python
+        .. code-block:: python
 
-                # write single index
-                fram[0] = 1
+            # write single index
+            fram[0] = 1
 
-                # write values 0 thru 4 with a list
-                fram[0] = [0,1,2,3]
+            # write values 0 thru 4 with a list
+            fram[0] = [0,1,2,3]
         """
         if self.write_protected:
             raise RuntimeError("FRAM currently write protected.")
@@ -212,7 +195,7 @@ class FRAM:
 
 
 class FRAM_I2C(FRAM):
-    """ I2C class for FRAM.
+    """I2C class for FRAM.
 
     :param: ~busio.I2C i2c_bus: The I2C bus the FRAM is connected to.
     :param: int address: I2C address of FRAM. Default address is ``0x50``.
@@ -291,7 +274,7 @@ class FRAM_I2C(FRAM):
 
 
 class FRAM_SPI(FRAM):
-    """ SPI class for FRAM.
+    """SPI class for FRAM.
 
     :param: ~busio.SPI spi_bus: The SPI bus the FRAM is connected to.
     :param: ~digitalio.DigitalInOut spi_cs: The SPI CS pin.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
 ## Simple Example For CircuitPython/Python SPI FRAM Library
 
 import board
