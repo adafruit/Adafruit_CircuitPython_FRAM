@@ -169,9 +169,9 @@ class FRAM:
             raise RuntimeError("FRAM currently write protected.")
 
         if isinstance(address, int):
-            if not isinstance(value, (int, bytearray, list, tuple)):
+            if not isinstance(value, (int, bytes, bytearray, list, tuple)):
                 raise ValueError(
-                    "Data must be a single integer, or a bytearray," " list, or tuple."
+                    "Data must be a single integer, bytes, bytearray, list, or tuple."
                 )
             if not 0 <= address < self._max_size:
                 raise ValueError(
