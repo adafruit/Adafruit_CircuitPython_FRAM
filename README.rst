@@ -56,6 +56,11 @@ Usage Example
 
 See simpletest examples in the ``/examples/`` directory.
 
+Documentation
+=============
+
+API documentation for this library can be found on `Read the Docs <https://circuitpython.readthedocs.io/projects/fram/en/latest/>`_.
+
 Contributing
 ============
 
