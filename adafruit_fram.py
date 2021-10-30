@@ -169,9 +169,9 @@ class FRAM:
             raise RuntimeError("FRAM currently write protected.")
 
         if isinstance(address, int):
-            if not isinstance(value, (int, bytes, bytearray, list, tuple)):
+            if not isinstance(value, int):
                 raise ValueError(
-                    "Data must be a single integer, bytes, bytearray, list, or tuple."
+                    "Data must be a single integer for single addresses"
                 )
             if not 0 <= address < self._max_size:
                 raise ValueError(
@@ -183,7 +183,33 @@ class FRAM:
             self._write(address, value, self._wraparound)
 
         elif isinstance(address, slice):
-            raise ValueError("Slicing not available during write operations.")
+            if not isinstance(value, (bytes, bytearray, list, tuple)):
+                raise ValueError(
+                    "Data must be a single integer, bytes, bytearray, list, or tuple for multiple addresses"
+                )
+            if (address.start is None) or (address.stop is None):
+                raise ValueError(
+                    "Boundless slices are not supported"
+                )
+            if (address.start < 0) or (address.stop > self._max_size):
+                raise ValueError(
+                "Slice '{0}:{1}' out of range. All addresses must be 0 <= address < {2}.".format(
+                        address.start, address.stop, self._max_size
+                    )
+                )
+            if len(value) < (len(range(address.start, address.stop, address.step))):
+                raise ValueError(
+                    "Cannot set values with a list smaller than the number of indexes"
+                )
+
+            address_range = range(address.start, address.stop, address.step)
+            value = [value] * len(address_range) if isinstance(value, int) else value
+            if (address.step == 1) or address.step is None:
+                self._write(address.start, value, self._wraparound)
+            else:
+                slice_iterable = zip(value, list(address_range))
+                for index in slice_iterable:
+                    self._write(index, value, self._wraparound)
 
     def _read_address(self, address, read_buffer):
         # Implemented by subclass
