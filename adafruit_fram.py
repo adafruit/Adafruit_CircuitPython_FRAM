@@ -163,7 +163,7 @@ class FRAM:
             fram[0] = 1
 
             # write values 0 thru 4 with a list
-            fram[0] = [0,1,2,3]
+            fram[0:4] = [0,1,2,3]
         """
         if self.write_protected:
             raise RuntimeError("FRAM currently write protected.")
