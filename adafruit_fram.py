@@ -191,25 +191,24 @@ class FRAM:
                 raise ValueError(
                     "Boundless slices are not supported"
                 )
+            if (address.step is not None) and (address.step != 1):
+                raise ValueError("Slice stepping is not currently available.")
             if (address.start < 0) or (address.stop > self._max_size):
                 raise ValueError(
                 "Slice '{0}:{1}' out of range. All addresses must be 0 <= address < {2}.".format(
                         address.start, address.stop, self._max_size
                     )
                 )
-            if len(value) < (len(range(address.start, address.stop, address.step))):
+            if len(value) < (len(range(address.start, address.stop))):
                 raise ValueError(
                     "Cannot set values with a list smaller than the number of indexes"
                 )
 
-            address_range = range(address.start, address.stop, address.step)
+            address_range = range(address.start, address.stop)
             value = [value] * len(address_range) if isinstance(value, int) else value
-            if (address.step == 1) or address.step is None:
-                self._write(address.start, value, self._wraparound)
-            else:
-                slice_iterable = zip(value, list(address_range))
-                for index in slice_iterable:
-                    self._write(index, value, self._wraparound)
+            slice_iterable = zip(value, list(address_range))
+            for index in slice_iterable:
+                self._write(index, value, self._wraparound)
 
     def _read_address(self, address, read_buffer):
         # Implemented by subclass
