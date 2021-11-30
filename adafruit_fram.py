@@ -201,11 +201,8 @@ class FRAM:
                     "Cannot set values with a list smaller than the number of indexes"
                 )
 
-            address_range = range(address.start, address.stop)
-            value = [value] * len(address_range) if isinstance(value, int) else value
-            slice_iterable = zip(value, list(address_range))
-            for index in slice_iterable:
-                self._write(index, value, self._wraparound)
+            self._write(address.start, value, self._wraparound)
+
 
     def _read_address(self, address, read_buffer):
         # Implemented by subclass
