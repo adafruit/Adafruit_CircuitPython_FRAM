@@ -183,8 +183,8 @@ class FRAM:
         elif isinstance(address, slice):
             if not isinstance(value, (bytes, bytearray, list, tuple)):
                 raise ValueError(
-                    "Data must be bytes, bytearray, list, " \
-                        "or tuple for multiple addresses"
+                    "Data must be bytes, bytearray, list, "
+                    "or tuple for multiple addresses"
                 )
             if (address.start is None) or (address.stop is None):
                 raise ValueError("Boundless slices are not supported")
@@ -202,7 +202,6 @@ class FRAM:
                 )
 
             self._write(address.start, value, self._wraparound)
-
 
     def _read_address(self, address, read_buffer):
         # Implemented by subclass
