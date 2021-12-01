@@ -163,16 +163,14 @@ class FRAM:
             fram[0] = 1
 
             # write values 0 thru 4 with a list
-            fram[0] = [0,1,2,3]
+            fram[0:4] = [0,1,2,3]
         """
         if self.write_protected:
             raise RuntimeError("FRAM currently write protected.")
 
         if isinstance(address, int):
-            if not isinstance(value, (int, bytes, bytearray, list, tuple)):
-                raise ValueError(
-                    "Data must be a single integer, bytes, bytearray, list, or tuple."
-                )
+            if not isinstance(value, int):
+                raise ValueError("Data must be a single integer for single addresses")
             if not 0 <= address < self._max_size:
                 raise ValueError(
                     "Address '{0}' out of range. It must be 0 <= address < {1}.".format(
@@ -183,7 +181,27 @@ class FRAM:
             self._write(address, value, self._wraparound)
 
         elif isinstance(address, slice):
-            raise ValueError("Slicing not available during write operations.")
+            if not isinstance(value, (bytes, bytearray, list, tuple)):
+                raise ValueError(
+                    "Data must be bytes, bytearray, list, "
+                    "or tuple for multiple addresses"
+                )
+            if (address.start is None) or (address.stop is None):
+                raise ValueError("Boundless slices are not supported")
+            if (address.step is not None) and (address.step != 1):
+                raise ValueError("Slice stepping is not currently available.")
+            if (address.start < 0) or (address.stop > self._max_size):
+                raise ValueError(
+                    "Slice '{0}:{1}' out of range. All addresses must be 0 <= address < {2}.".format(  # pylint: disable=line-too-long
+                        address.start, address.stop, self._max_size
+                    )
+                )
+            if len(value) < (len(range(address.start, address.stop))):
+                raise ValueError(
+                    "Cannot set values with a list smaller than the number of indexes"
+                )
+
+            self._write(address.start, value, self._wraparound)
 
     def _read_address(self, address, read_buffer):
         # Implemented by subclass
