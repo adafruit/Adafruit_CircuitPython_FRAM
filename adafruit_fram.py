@@ -140,7 +140,7 @@ class FRAM:
             regs = list(
                 range(
                     address.start if address.start is not None else 0,
-                    address.stop + 1 if address.stop is not None else self._max_size,
+                    address.stop if address.stop is not None else self._max_size,
                 )
             )
             if regs[0] < 0 or (regs[0] + len(regs)) > self._max_size:
