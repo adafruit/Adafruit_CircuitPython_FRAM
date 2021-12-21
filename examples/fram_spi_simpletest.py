@@ -27,6 +27,6 @@ print(fram[0])
 ##       a buffer the size of 'length', which may cause
 ##       problems on memory-constrained platforms.
 
-values = list(range(100))  # or bytearray or tuple
-fram[0:100] = values
-print(fram[0:100])
+# values = list(range(100))  # or bytearray or tuple
+# fram[0:100] = values
+# print(fram[0:100])
