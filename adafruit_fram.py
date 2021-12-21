@@ -170,7 +170,7 @@ class FRAM:
 
         if isinstance(address, int):
             if not isinstance(value, int):
-                raise ValueError("Data must be a single integer for single addresses")
+                raise ValueError("Data stored in an address must be an integer 0-255")
             if not 0 <= address < self._max_size:
                 raise ValueError(
                     "Address '{0}' out of range. It must be 0 <= address < {1}.".format(
