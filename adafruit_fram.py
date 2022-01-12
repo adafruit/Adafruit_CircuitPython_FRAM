@@ -31,6 +31,13 @@ Implementation Notes
 # imports
 from micropython import const
 
+try:
+    from typing import Optional, Union, Sequence
+    from digitalio import DigitalInOut
+    from busio import I2C, SPI
+except ImportError:
+    pass
+
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_FRAM.git"
 
@@ -55,9 +62,19 @@ _SPI_OPCODE_RDID = const(0x9F)  # Read device ID
 class FRAM:
     """
     Driver base for the FRAM Breakout.
+
+    :param int max_size: The maximum size of the EEPROM
+    :param bool write_protect: Turns on/off initial write protection
+    :param DigitalInOut wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
+        Must be a ``DigitalInOut`` object.
     """
 
-    def __init__(self, max_size, write_protect=False, wp_pin=None):
+    def __init__(
+        self,
+        max_size: int,
+        write_protect: bool = False,
+        wp_pin: Optional[DigitalInOut] = None,
+    ) -> None:
         self._max_size = max_size
         self._wp = write_protect
         self._wraparound = False
@@ -70,7 +87,7 @@ class FRAM:
             self._wp_pin = wp_pin
 
     @property
-    def write_wraparound(self):
+    def write_wraparound(self) -> bool:
         """Determines if sequential writes will wrapaound highest memory address
         (``len(FRAM) - 1``) address. If ``False``, and a requested write will
         extend beyond the maximum size, an exception is raised.
@@ -78,13 +95,13 @@ class FRAM:
         return self._wraparound
 
     @write_wraparound.setter
-    def write_wraparound(self, value):
-        if not value in (True, False):
+    def write_wraparound(self, value: bool) -> None:
+        if not isinstance(value, bool):
             raise ValueError("Write wraparound must be 'True' or 'False'.")
         self._wraparound = value
 
     @property
-    def write_protected(self):
+    def write_protected(self) -> bool:
         """The status of write protection. Default value on initialization is
         ``False``.
 
@@ -97,7 +114,7 @@ class FRAM:
         """
         return self._wp if self._wp_pin is None else self._wp_pin.value
 
-    def __len__(self):
+    def __len__(self) -> int:
         """The size of the current FRAM chip. This is one more than the highest
         address location that can be read or written to.
 
@@ -113,7 +130,7 @@ class FRAM:
         """
         return self._max_size
 
-    def __getitem__(self, address):
+    def __getitem__(self, address: Union[int, slice]) -> bytearray:
         """Read the value at the given index, or values in a slice.
 
         .. code-block:: python
@@ -154,7 +171,7 @@ class FRAM:
 
         return read_buffer
 
-    def __setitem__(self, address, value):
+    def __setitem__(self, address: Union[int, slice], value: Union[int, Sequence[int]]):
         """Write the value at the given starting index.
 
         .. code-block:: python
@@ -203,11 +220,13 @@ class FRAM:
 
             self._write(address.start, value, self._wraparound)
 
-    def _read_address(self, address, read_buffer):
+    def _read_address(self, address: int, read_buffer: bytearray) -> bytearray:
         # Implemented by subclass
         raise NotImplementedError
 
-    def _write(self, start_address, data, wraparound):
+    def _write(
+        self, start_address: int, data: Union[int, Sequence[int]], wraparound: bool
+    ) -> None:
         # Implemened by subclass
         raise NotImplementedError
 
@@ -215,16 +234,22 @@ class FRAM:
 class FRAM_I2C(FRAM):
     """I2C class for FRAM.
 
-    :param: ~busio.I2C i2c_bus: The I2C bus the FRAM is connected to.
-    :param: int address: I2C address of FRAM. Default address is ``0x50``.
-    :param: bool write_protect: Turns on/off initial write protection.
+    :param ~busio.I2C i2c_bus: The I2C bus the FRAM is connected to.
+    :param int address: I2C address of FRAM. Default address is ``0x50``.
+    :param bool write_protect: Turns on/off initial write protection.
                                 Default is ``False``.
-    :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
+    :param wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
                     Must be a ``digitalio.DigitalInOut`` object.
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, i2c_bus, address=0x50, write_protect=False, wp_pin=None):
+    def __init__(
+        self,
+        i2c_bus: I2C,
+        address: int = 0x50,
+        write_protect: bool = False,
+        wp_pin: Optional[DigitalInOut] = None,
+    ) -> None:
         from adafruit_bus_device.i2c_device import (  # pylint: disable=import-outside-toplevel
             I2CDevice as i2cdev,
         )
@@ -241,7 +266,7 @@ class FRAM_I2C(FRAM):
         self._i2c = i2cdev(i2c_bus, address)
         super().__init__(_MAX_SIZE_I2C, write_protect, wp_pin)
 
-    def _read_address(self, address, read_buffer):
+    def _read_address(self, address: int, read_buffer: bytearray) -> bytearray:
         write_buffer = bytearray(2)
         write_buffer[0] = address >> 8
         write_buffer[1] = address & 0xFF
@@ -249,7 +274,12 @@ class FRAM_I2C(FRAM):
             i2c.write_then_readinto(write_buffer, read_buffer)
         return read_buffer
 
-    def _write(self, start_address, data, wraparound=False):
+    def _write(
+        self,
+        start_address: int,
+        data: Union[int, Sequence[int]],
+        wraparound: bool = False,
+    ) -> None:
         # Decided against using the chip's "Page Write", since that would require
         # doubling the memory usage by creating a buffer that includes the passed
         # in data so that it can be sent all in one `i2c.write`. The single-write
@@ -283,8 +313,8 @@ class FRAM_I2C(FRAM):
 
     # pylint: disable=no-member
     @FRAM.write_protected.setter
-    def write_protected(self, value):
-        if value not in (True, False):
+    def write_protected(self, value: bool) -> None:
+        if not isinstance(value, bool):
             raise ValueError("Write protected value must be 'True' or 'False'.")
         self._wp = value
         if not self._wp_pin is None:
@@ -294,12 +324,12 @@ class FRAM_I2C(FRAM):
 class FRAM_SPI(FRAM):
     """SPI class for FRAM.
 
-    :param: ~busio.SPI spi_bus: The SPI bus the FRAM is connected to.
-    :param: ~digitalio.DigitalInOut spi_cs: The SPI CS pin.
-    :param: bool write_protect: Turns on/off initial write protection.
-                                Default is ``False``.
-    :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
-                    Must be a ``digitalio.DigitalInOut`` object.
+    :param ~busio.SPI spi_bus: The SPI bus the FRAM is connected to.
+    :param ~digitalio.DigitalInOut spi_cs: The SPI CS pin.
+    :param bool write_protect: Turns on/off initial write protection.
+        Default is ``False``.
+    :param wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
+        Must be a ``digitalio.DigitalInOut`` object.
     :param int baudrate: SPI baudrate to use. Default is ``1000000``.
     :param int max_size: Size of FRAM in Bytes. Default is ``8192``.
     """
@@ -307,12 +337,12 @@ class FRAM_SPI(FRAM):
     # pylint: disable=too-many-arguments,too-many-locals
     def __init__(
         self,
-        spi_bus,
-        spi_cs,
-        write_protect=False,
-        wp_pin=None,
-        baudrate=100000,
-        max_size=_MAX_SIZE_SPI,
+        spi_bus: SPI,
+        spi_cs: DigitalInOut,
+        write_protect: bool = False,
+        wp_pin: Optional[DigitalInOut] = None,
+        baudrate: int = 100000,
+        max_size: int = _MAX_SIZE_SPI,
     ):
         from adafruit_bus_device.spi_device import (  # pylint: disable=import-outside-toplevel
             SPIDevice as spidev,
@@ -331,7 +361,7 @@ class FRAM_SPI(FRAM):
         self._spi = _spi
         super().__init__(max_size, write_protect, wp_pin)
 
-    def _read_address(self, address, read_buffer):
+    def _read_address(self, address: int, read_buffer: bytearray) -> bytearray:
         write_buffer = bytearray(4)
         write_buffer[0] = _SPI_OPCODE_READ
         if self._max_size > 0xFFFF:
@@ -347,7 +377,12 @@ class FRAM_SPI(FRAM):
             spi.readinto(read_buffer)
         return read_buffer
 
-    def _write(self, start_address, data, wraparound=False):
+    def _write(
+        self,
+        start_address: int,
+        data: Union[int, Sequence[int]],
+        wraparound: bool = False,
+    ) -> None:
         buffer = bytearray(4)
         if not isinstance(data, int):
             data_length = len(data)
@@ -381,11 +416,11 @@ class FRAM_SPI(FRAM):
             spi.write(bytearray([_SPI_OPCODE_WRDI]))
 
     @FRAM.write_protected.setter
-    def write_protected(self, value):
+    def write_protected(self, value: bool) -> None:
         # While it is possible to protect block ranges on the SPI chip,
         # it seems superfluous to do so. So, block protection always protects
         # the entire memory (BP0 and BP1).
-        if value not in (True, False):
+        if not isinstance(value, bool):
             raise ValueError("Write protected value must be 'True' or 'False'.")
         self._wp = value
         write_buffer = bytearray(2)
