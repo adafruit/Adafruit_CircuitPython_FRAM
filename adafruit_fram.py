@@ -62,6 +62,11 @@ _SPI_OPCODE_RDID = const(0x9F)  # Read device ID
 class FRAM:
     """
     Driver base for the FRAM Breakout.
+
+    :param int max_size: The maximum size of the EEPROM
+    :param bool write_protect: Turns on/off initial write protection
+    :param DigitalInOut wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
+        Must be a ``DigitalInOut`` object.
     """
 
     def __init__(self, max_size: int, write_protect: bool = False, wp_pin: Optional[DigitalInOut] = None) -> None:
@@ -222,11 +227,11 @@ class FRAM:
 class FRAM_I2C(FRAM):
     """I2C class for FRAM.
 
-    :param: ~busio.I2C i2c_bus: The I2C bus the FRAM is connected to.
-    :param: int address: I2C address of FRAM. Default address is ``0x50``.
-    :param: bool write_protect: Turns on/off initial write protection.
+    :param ~busio.I2C i2c_bus: The I2C bus the FRAM is connected to.
+    :param int address: I2C address of FRAM. Default address is ``0x50``.
+    :param bool write_protect: Turns on/off initial write protection.
                                 Default is ``False``.
-    :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
+    :param wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
                     Must be a ``digitalio.DigitalInOut`` object.
     """
 
@@ -301,12 +306,12 @@ class FRAM_I2C(FRAM):
 class FRAM_SPI(FRAM):
     """SPI class for FRAM.
 
-    :param: ~busio.SPI spi_bus: The SPI bus the FRAM is connected to.
-    :param: ~digitalio.DigitalInOut spi_cs: The SPI CS pin.
-    :param: bool write_protect: Turns on/off initial write protection.
-                                Default is ``False``.
-    :param: wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
-                    Must be a ``digitalio.DigitalInOut`` object.
+    :param ~busio.SPI spi_bus: The SPI bus the FRAM is connected to.
+    :param ~digitalio.DigitalInOut spi_cs: The SPI CS pin.
+    :param bool write_protect: Turns on/off initial write protection.
+        Default is ``False``.
+    :param wp_pin: (Optional) Physical pin connected to the ``WP`` breakout pin.
+        Must be a ``digitalio.DigitalInOut`` object.
     :param int baudrate: SPI baudrate to use. Default is ``1000000``.
     :param int max_size: Size of FRAM in Bytes. Default is ``8192``.
     """
