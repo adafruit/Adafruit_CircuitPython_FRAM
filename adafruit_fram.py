@@ -90,8 +90,8 @@ class FRAM:
         return self._wraparound
 
     @write_wraparound.setter
-        if not value in (True, False):
     def write_wraparound(self, value: bool) -> None:
+        if not isinstance(value, bool):
             raise ValueError("Write wraparound must be 'True' or 'False'.")
         self._wraparound = value
 
@@ -295,8 +295,8 @@ class FRAM_I2C(FRAM):
 
     # pylint: disable=no-member
     @FRAM.write_protected.setter
-        if value not in (True, False):
     def write_protected(self, value: bool) -> None:
+        if not isinstance(value, bool):
             raise ValueError("Write protected value must be 'True' or 'False'.")
         self._wp = value
         if not self._wp_pin is None:
