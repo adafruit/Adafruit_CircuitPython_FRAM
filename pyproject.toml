@@ -12,7 +12,7 @@ requires = [
 [project]
 name = "adafruit-circuitpython-fram"
 description = "CircuitPython/Python library to support the I2C and SPI FRAM Breakouts."
-version = "0.0.0-auto.0"
+version = "0.0.0+auto.0"
 readme = "README.rst"
 authors = [
     {name = "Adafruit Industries", email = "circuitpython@adafruit.com"}
