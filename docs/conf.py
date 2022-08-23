@@ -51,8 +51,14 @@ master_doc = "index"
 
 # General information about the project.
 project = "Adafruit FRAM Library"
+creation_year = "2018"
 current_year = str(datetime.datetime.now().year)
-copyright = current_year + " Michael Schroeder"
+year_duration = (
+    current_year
+    if current_year == creation_year
+    else creation_year + " - " + current_year
+)
+copyright = year_duration + " Michael Schroeder"
 author = "Michael Schroeder"
 
 # The version info for the project you're documenting, acts as replacement for
