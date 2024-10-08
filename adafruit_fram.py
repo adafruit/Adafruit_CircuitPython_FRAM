@@ -15,10 +15,14 @@ Implementation Notes
 
 **Hardware:**
 
- * Adafruit `I2C Non-Volatile FRAM Breakout
+ * Adafruit `I2C Non-Volatile FRAM Breakout -  32k
    <https://www.adafruit.com/product/1895>`_ (Product ID: 1895)
- * Adafruit `SPI Non-Volatile FRAM Breakout
+ * Adafruit `SPI Non-Volatile FRAM Breakout -   8k
    <https://www.adafruit.com/product/1897>`_ (Product ID: 1897)
+ * Adafruit `SPI Non-Volatile FRAM Breakout - 256k
+   <https://www.adafruit.com/product/4718>`_ (Product ID: 4718)
+ * Adafruit `SPI Non-Volatile FRAM Breakout - 512k
+   <https://www.adafruit.com/product/4719>`_ (Product ID: 4719)
 
 **Software and Dependencies:**
 
@@ -249,6 +253,7 @@ class FRAM_I2C(FRAM):
         address: int = 0x50,
         write_protect: bool = False,
         wp_pin: Optional[DigitalInOut] = None,
+        max_size: int = _MAX_SIZE_I2C, # BBB
     ) -> None:
         from adafruit_bus_device.i2c_device import (  # pylint: disable=import-outside-toplevel
             I2CDevice as i2cdev,
@@ -264,7 +269,7 @@ class FRAM_I2C(FRAM):
             raise OSError("FRAM I2C device not found.")
 
         self._i2c = i2cdev(i2c_bus, address)
-        super().__init__(_MAX_SIZE_I2C, write_protect, wp_pin)
+        super().__init__(max_size, write_protect, wp_pin) # BBB
 
     def _read_address(self, address: int, read_buffer: bytearray) -> bytearray:
         write_buffer = bytearray(2)
