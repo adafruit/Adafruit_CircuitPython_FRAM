@@ -32,9 +32,10 @@ Implementation Notes
 from micropython import const
 
 try:
-    from typing import Optional, Union, Sequence
-    from digitalio import DigitalInOut
+    from typing import Optional, Sequence, Union
+
     from busio import I2C, SPI
+    from digitalio import DigitalInOut
 except ImportError:
     pass
 
@@ -144,9 +145,7 @@ class FRAM:
         if isinstance(address, int):
             if not 0 <= address < self._max_size:
                 raise ValueError(
-                    "Address '{0}' out of range. It must be 0 <= address < {1}.".format(
-                        address, self._max_size
-                    )
+                    f"Address '{address}' out of range. It must be 0 <= address < {self._max_size}."
                 )
             buffer = bytearray(1)
             read_buffer = self._read_address(address, buffer)
@@ -163,7 +162,7 @@ class FRAM:
             if regs[0] < 0 or (regs[0] + len(regs)) > self._max_size:
                 raise ValueError(
                     "Address slice out of range. It must be 0 <= [starting address"
-                    ":stopping address] < {0}.".format(self._max_size)
+                    f":stopping address] < {self._max_size}."
                 )
 
             buffer = bytearray(len(regs))
@@ -190,9 +189,7 @@ class FRAM:
                 raise ValueError("Data stored in an address must be an integer 0-255")
             if not 0 <= address < self._max_size:
                 raise ValueError(
-                    "Address '{0}' out of range. It must be 0 <= address < {1}.".format(
-                        address, self._max_size
-                    )
+                    f"Address '{address}' out of range. It must be 0 <= address < {self._max_size}."
                 )
 
             self._write(address, value, self._wraparound)
@@ -200,8 +197,7 @@ class FRAM:
         elif isinstance(address, slice):
             if not isinstance(value, (bytes, bytearray, list, tuple)):
                 raise ValueError(
-                    "Data must be bytes, bytearray, list, "
-                    "or tuple for multiple addresses"
+                    "Data must be bytes, bytearray, list, " "or tuple for multiple addresses"
                 )
             if (address.start is None) or (address.stop is None):
                 raise ValueError("Boundless slices are not supported")
@@ -209,14 +205,10 @@ class FRAM:
                 raise ValueError("Slice stepping is not currently available.")
             if (address.start < 0) or (address.stop > self._max_size):
                 raise ValueError(
-                    "Slice '{0}:{1}' out of range. All addresses must be 0 <= address < {2}.".format(  # pylint: disable=line-too-long
-                        address.start, address.stop, self._max_size
-                    )
+                    f"Slice '{address.start}:{address.stop}' out of range. All addresses must be 0 <= address < {self._max_size}."  # noqa: E501
                 )
             if len(value) < (len(range(address.start, address.stop))):
-                raise ValueError(
-                    "Cannot set values with a list smaller than the number of indexes"
-                )
+                raise ValueError("Cannot set values with a list smaller than the number of indexes")
 
             self._write(address.start, value, self._wraparound)
 
@@ -224,9 +216,7 @@ class FRAM:
         # Implemented by subclass
         raise NotImplementedError
 
-    def _write(
-        self, start_address: int, data: Union[int, Sequence[int]], wraparound: bool
-    ) -> None:
+    def _write(self, start_address: int, data: Union[int, Sequence[int]], wraparound: bool) -> None:
         # Implemened by subclass
         raise NotImplementedError
 
@@ -242,7 +232,6 @@ class FRAM_I2C(FRAM):
                     Must be a ``digitalio.DigitalInOut`` object.
     """
 
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         i2c_bus: I2C,
@@ -250,7 +239,7 @@ class FRAM_I2C(FRAM):
         write_protect: bool = False,
         wp_pin: Optional[DigitalInOut] = None,
     ) -> None:
-        from adafruit_bus_device.i2c_device import (  # pylint: disable=import-outside-toplevel
+        from adafruit_bus_device.i2c_device import (  # noqa: PLC0415
             I2CDevice as i2cdev,
         )
 
@@ -311,7 +300,6 @@ class FRAM_I2C(FRAM):
                 buffer[2] = data[i]
                 i2c.write(buffer)
 
-    # pylint: disable=no-member
     @FRAM.write_protected.setter
     def write_protected(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -334,7 +322,6 @@ class FRAM_SPI(FRAM):
     :param int max_size: Size of FRAM in Bytes. Default is ``8192``.
     """
 
-    # pylint: disable=too-many-arguments,too-many-locals
     def __init__(
         self,
         spi_bus: SPI,
@@ -344,7 +331,7 @@ class FRAM_SPI(FRAM):
         baudrate: int = 100000,
         max_size: int = _MAX_SIZE_SPI,
     ):
-        from adafruit_bus_device.spi_device import (  # pylint: disable=import-outside-toplevel
+        from adafruit_bus_device.spi_device import (  # noqa: PLC0415
             SPIDevice as spidev,
         )
 

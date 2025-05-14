@@ -6,6 +6,7 @@
 import board
 import busio
 import digitalio
+
 import adafruit_fram
 
 ## Create a FRAM object.
