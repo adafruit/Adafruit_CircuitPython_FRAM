@@ -5,6 +5,7 @@
 
 import board
 import busio
+
 import adafruit_fram
 
 ## Create a FRAM object (default address used).
